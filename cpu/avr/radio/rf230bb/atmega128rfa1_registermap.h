@@ -67,7 +67,7 @@
 #define RG_IEEE_ADDR_5        IEEE_ADDR_5
 #define RG_IEEE_ADDR_6        IEEE_ADDR_6
 #define RG_IEEE_ADDR_7        IEEE_ADDR_7
-//#define SR_ED_LEVEL           0x147, 0xff, 0
+#define SR_ED_LEVEL           0x147, 0xff, 0
 #define RG_PHY_ED_LEVEL       PHY_ED_LEVEL
 #define RG_RX_SYN             RX_SYN
 #define SR_RSSI               0x146, 0x1f, 0
@@ -83,6 +83,13 @@
 #define SR_CCA_STATUS          0x141, 0x40, 6
 #define SR_AACK_SET_PD         0x16e, 0x20, 5
 
+/** defines for use as sniffer */
+#define SR_AACK_PROM_MODE 		0x157, 0x2, 1
+#define SR_AACK_DIS_ACK 		0x16e, 0x10, 4
+
+/** enables rx frame time stamping from symbol counter
+ * NOTE: generated for all incoming frames even if corrupted */
+#define SR_RX_TS_ENABLE			0xdc, 0x28
 
 /* RF230 register assignments, for reference */
 #if 0
