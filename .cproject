@@ -4,8 +4,9 @@
 		<cconfiguration id="de.innot.avreclipse.toolchain.winavr.base.557712590">
 			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="de.innot.avreclipse.toolchain.winavr.base.557712590" moduleId="org.eclipse.cdt.core.settings" name="Default">
 				<macros>
-					<stringMacro name="TARGET" type="VALUE_TEXT" value="TARGET=avr-atmega128rfa1"/>
-					<stringMacro name="CONTIKI_BUILD_LOC" type="VALUE_TEXT" value="/home/user/"/>
+					<stringMacro name="TARGET" type="VALUE_TEXT" value="TARGET=rcb128rfa1"/>
+					<stringMacro name="CONTIKI_APP" type="VALUE_TEXT" value="transceiver"/>
+					<stringMacro name="CONTIKI_BUILD_LOC" type="VALUE_TEXT" value="/home/user/projects/git/contiki/projects/serial-phy"/>
 				</macros>
 				<externalSettings/>
 				<extensions>
@@ -25,7 +26,7 @@
 							<option id="de.innot.avreclipse.toolchain.options.toolchain.size.347203371" name="Print Size" superClass="de.innot.avreclipse.toolchain.options.toolchain.size"/>
 							<option id="de.innot.avreclipse.toolchain.options.toolchain.avrdude.1652957544" name="AVRDude" superClass="de.innot.avreclipse.toolchain.options.toolchain.avrdude"/>
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="de.innot.avreclipse.targetplatform.avr.210673606" name="AVR Cross-Target" osList="all" superClass="de.innot.avreclipse.targetplatform.avr"/>
-							<builder arguments="${TARGET}" command="make" id="de.innot.avreclipse.target.builder.winavr.base.41953389" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="AVR GNU Make Builder" superClass="de.innot.avreclipse.target.builder.winavr.base">
+							<builder arguments="${TARGET}" buildPath="${CONTIKI_BUILD_LOC}" command="make" id="de.innot.avreclipse.target.builder.winavr.base.41953389" incrementalBuildTarget="${CONTIKI_APP}" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="AVR GNU Make Builder" superClass="de.innot.avreclipse.target.builder.winavr.base">
 								<outputEntries>
 									<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="outputPath" name=""/>
 								</outputEntries>
@@ -46,6 +47,8 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/contiki3.0/core/sys}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/contiki3.0/core/lib}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/contiki3.0/core/dev}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/contiki3.0/platform/rcb128rfa1}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/contiki3.0/projects/serial-phy}&quot;"/>
 								</option>
 								<inputType id="de.innot.avreclipse.compiler.winavr.input.465114025" name="C Source Files" superClass="de.innot.avreclipse.compiler.winavr.input"/>
 							</tool>
@@ -56,11 +59,12 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry excluding="dev|cpu/avr|core|apps" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+						<entry excluding="projects|projects/serial-phy|dev|cpu/avr|core|apps" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="apps"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="core"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="cpu/avr"/>
 						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="dev"/>
+						<entry flags="VALUE_WORKSPACE_PATH" kind="sourcePath" name="projects/serial-phy"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
