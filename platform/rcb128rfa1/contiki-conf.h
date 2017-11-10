@@ -42,10 +42,10 @@
 #define CONTIKI_CONF_H_
 
 /* Platform name, type, and MCU clock rate */
-#define PLATFORM_NAME  "RFA1"
+#define PLATFORM_NAME  "RCB128RFA1"
 #define PLATFORM_TYPE  ATMEGA128RFA1
 #ifndef F_CPU
-#define F_CPU          8000000UL
+#define F_CPU          16000000UL
 #endif
 
 #include <stdint.h>
