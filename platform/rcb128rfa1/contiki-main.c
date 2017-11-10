@@ -6,10 +6,10 @@
  */
 
 #define DEBUG 0
-#if DEBUG
+#if defined(DEBUG) && DEBUG == 1
 #define PRINTD(FORMAT,args...) printf_P(PSTR(FORMAT),##args)
 #else
-#define PRINTD(...)
+#define PRINTD(...) /* Don't do anything in release builds */
 #endif
 
 #define SENSTERMBOARD 0			// stdout on sensor terminal board (STB)
@@ -75,7 +75,7 @@ void get_mac_from_eeprom(linkaddr_t *addr)
 }
 
 /*-------------------------Low level initialization------------------------*/
-void initialize(void)
+void init(void)
 {
   watchdog_init();
   watchdog_start();
@@ -165,7 +165,7 @@ void initialize(void)
 int
 main(void)
 {
-  initialize();
+  init();
 
   while(1) {
     process_run();

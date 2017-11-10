@@ -31,6 +31,9 @@
 #define DLT_IEEE802_15_4_NONASK_PHY	215
 #define DLT_IEEE802_15_4_NO_FCS		230
 
+/* link type length */
+#define DLT_IEEE802_15_4_LEN		128
+
 typedef struct pcap_timeval_t {
 	    uint32_t ts_sec;         	/* timestamp seconds */
         uint32_t ts_usec;        	/* timestamp microseconds */

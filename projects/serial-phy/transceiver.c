@@ -8,6 +8,7 @@
 #include <stdint.h>
 
 #include "contiki.h"
+#include "leds.h"
 #include "dev/pcapng.h"
 #include "dev/pcapng-line.h"
 #include "net/netstack.h"
@@ -17,15 +18,31 @@
 #include "sys/clock.h"
 #include <stdio.h>
 
-#define DEBUG 1
-#if DEBUG
-#define print_debug printf
+#define DEBUG 0
+#if DEBUG && DEBUG == 1
+#define print_debug(fmt, args...) printf("[802154_Serial_PHY]: " fmt "\n", ##args)
+#elif DEBUG && DEBUG == 2
+#define print_debug(fmt, args...) printf("DEBUG: %s:%d: " fmt, \
+    __FILE__, __LINE__, ##args)
 #else
 #define print_debug(...)
 #endif
 
-/*---------------------------------------------------------------------------*/
-//static uint8_t[128] *buffer;
+/* timestamps could be recorded via contiki's clock_time() or
+ * via mac symbol counter on atmega128rfa1 */
+#define AVR_TIMESTAMPS 0
+/* 62.5 kHz clock, derived from the 16 MHz system clock */
+#define SYMBOL_COUNTER_SECOND 62500
+
+#if AVR_TIMESTAMPS
+#define COUNTER_SECOND SYMBOL_COUNTER_SECOND
+#else
+#define COUNTER_SECOND CLOCK_SECOND
+#endif
+
+#define IEEE802154_MAC_INTERFACE	1
+#define IEEE802154_PHY_INTERFACE	2
+
 /*---------------------------------------------------------------------------*/
 PROCESS(transceiver_init, "transceiver_init");
 AUTOSTART_PROCESSES(&transceiver_init);
@@ -35,13 +52,17 @@ AUTOSTART_PROCESSES(&transceiver_init);
 /*
  * initialization
  */
-void phy_init()
+void initialize()
 {
+	print_debug("initialize");
+
+	/* status led */
+	leds_on(1);
+
 	/* init pcap interfaces */
-	//pcapng_line_write_shb();
-	//pcapng_init();
-	//pcapng_registerIDB(DLT_IEEE802_15_4_PHY);
-	//pcapng_registerIDB(DLT_IEEE802_15_4_NO_FCS);
+	pcapng_line_write_shb();
+	pcapng_line_write_idb(DLT_IEEE802_15_4_NO_FCS, DLT_IEEE802_15_4_LEN);
+	pcapng_line_write_idb(DLT_IEEE802_15_4_PHY, DLT_IEEE802_15_4_LEN);
 
 	/* init radio module*/
 	radio_init();
@@ -51,9 +72,23 @@ void phy_init()
 /*
  * send message to external upper layer
  */
-void send(const void * data, uint16_t length)
+void send(const void * header, uint16_t hlen, const void * data, uint16_t d_len)
 {
-	pcap_write_frame(&data, length);
+	uint32_t time;
+	pcap_timeval_s timestamp;
+
+#if !AVR_TIMESTAMPS
+	time = clock_time();
+#else
+	/* TODO: packetbuf_attr() holds only 8 bit values */
+	time = packetbuf_attr(PACKETBUF_ATTR_TIMESTAMP);
+#endif
+
+	timestamp.ts_sec = (time - (time % COUNTER_SECOND)) / COUNTER_SECOND;
+	timestamp.ts_usec = 1000000 * (time % COUNTER_SECOND) / COUNTER_SECOND;
+
+	pcapng_line_write_epb(IEEE802154_PHY_INTERFACE, &timestamp, &header, hlen);
+	//pcapng_line_write(&data, length);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -62,6 +97,8 @@ void send(const void * data, uint16_t length)
  */
 void receive()
 {
+	print_debug("packet received");
+
 	static uint16_t length;
 	static uint8_t buffer[PACKETBUF_SIZE + PACKETBUF_HDR_SIZE];
 
@@ -76,8 +113,8 @@ void receive()
 	dataindication.ppduLinkQuality = radio_get_rssi_threshold() + packetbuf_attr(PACKETBUF_ATTR_RSSI);
 
 	/* send indication */
-	pcap_write_frame(&dataindication, SIZEOF_PD_DATA_INDICATION);
-	serial_write(&buffer, length);
+	send(&dataindication, SIZEOF_PD_DATA_INDICATION, &buffer, length);
+	//pcapng_line_write(&buffer, length);
 
 	/* clear packetbuf */
 	packetbuf_clear();
@@ -104,8 +141,8 @@ void get_phyPIB(phy_pib_attr attr)
 		uint8_t attr; // = rf230_get_channel();
 
 		getconfirm.header.length = SIZEOF_PLME_GET_CONFIRM + sizeof(attr);
-		pcap_write_frame(&getconfirm, SIZEOF_PLME_GET_CONFIRM);
-		serial_write(&attr, sizeof(attr));
+		send(&getconfirm, SIZEOF_PLME_GET_CONFIRM, &attr, sizeof(attr));
+		//pcapng_line_write(&attr, sizeof(attr));
 	}
 	break;
 
@@ -115,8 +152,8 @@ void get_phyPIB(phy_pib_attr attr)
 		uint8_t attr; // = radio_get_operating_channel();
 
 		getconfirm.header.length = SIZEOF_PLME_GET_CONFIRM + sizeof(attr);
-		pcap_write_frame(&getconfirm, SIZEOF_PLME_GET_CONFIRM);
-		serial_write(&attr, sizeof(attr));
+		send(&getconfirm, SIZEOF_PLME_GET_CONFIRM, &attr, sizeof(attr));
+		//pcapng_line_write(&attr, sizeof(attr));
 	}
 		break;
 
@@ -126,8 +163,8 @@ void get_phyPIB(phy_pib_attr attr)
 		uint8_t attr; // = radio_get_tx_power_level();
 
 		getconfirm.header.length = SIZEOF_PLME_GET_CONFIRM + sizeof(attr);
-		pcap_write_frame(&getconfirm, SIZEOF_PLME_GET_CONFIRM);
-		serial_write(&attr, sizeof(attr));
+		send(&getconfirm, SIZEOF_PLME_GET_CONFIRM, &attr, sizeof(attr));
+		//pcapng_line_write(&attr, sizeof(attr));
 	}
 		break;
 
@@ -137,8 +174,8 @@ void get_phyPIB(phy_pib_attr attr)
 		uint8_t attr = radio_get_cca_mode();
 
 		getconfirm.header.length = SIZEOF_PLME_GET_CONFIRM + sizeof(attr);
-		pcap_write_frame(&getconfirm, SIZEOF_PLME_GET_CONFIRM);
-		serial_write(&attr, sizeof(attr));
+		send(&getconfirm, SIZEOF_PLME_GET_CONFIRM, &attr, sizeof(attr));
+		//pcapng_line_write(&attr, sizeof(attr));
 	}
 		break;
 
@@ -148,8 +185,8 @@ void get_phyPIB(phy_pib_attr attr)
 		uint8_t attr;	//rf230_get_channel();
 
 		getconfirm.header.length = SIZEOF_PLME_GET_CONFIRM + sizeof(attr);
-		pcap_write_frame(&getconfirm, SIZEOF_PLME_GET_CONFIRM);
-		serial_write(&attr, sizeof(attr));
+		send(&getconfirm, SIZEOF_PLME_GET_CONFIRM, &attr, sizeof(attr));
+		//pcapng_line_write(&attr, sizeof(attr));
 	}
 		break;
 	case phyMaxFrameDuration:
@@ -158,8 +195,8 @@ void get_phyPIB(phy_pib_attr attr)
 		uint8_t attr;	//rf230_get_channel();
 
 		getconfirm.header.length = SIZEOF_PLME_GET_CONFIRM + sizeof(attr);
-		pcap_write_frame(&getconfirm, SIZEOF_PLME_GET_CONFIRM);
-		serial_write(&attr, sizeof(attr));
+		send(&getconfirm, SIZEOF_PLME_GET_CONFIRM, &attr, sizeof(attr));
+		//pcapng_line_write(&attr, sizeof(attr));
 	}
 		break;
 
@@ -169,8 +206,8 @@ void get_phyPIB(phy_pib_attr attr)
 		uint8_t attr;	//rf230_get_channel();
 
 		getconfirm.header.length = SIZEOF_PLME_GET_CONFIRM + sizeof(attr);
-		pcap_write_frame(&getconfirm, SIZEOF_PLME_GET_CONFIRM);
-		serial_write(&attr, sizeof(attr));
+		send(&getconfirm, SIZEOF_PLME_GET_CONFIRM, &attr, sizeof(attr));
+		//pcapng_line_write(&attr, sizeof(attr));
 	}
 		break;
 
@@ -180,18 +217,18 @@ void get_phyPIB(phy_pib_attr attr)
 		uint8_t attr;	//rf230_get_channel();
 
 		getconfirm.header.length = SIZEOF_PLME_GET_CONFIRM + sizeof(attr);
-		pcap_write_frame(&getconfirm, SIZEOF_PLME_GET_CONFIRM);
-		serial_write(&attr, sizeof(attr));
+		send(&getconfirm, SIZEOF_PLME_GET_CONFIRM, &attr, sizeof(attr));
+		//pcapng_line_write(&attr, sizeof(attr));
 	}
 		break;
 
 	default:
 	{
-		print_debug("[802154_Serial_PHY]: PLME_SET_REQUEST(STATUS) %s unsupported\n", phyAttrToString(attr));
+		print_debug("PLME_SET_REQUEST(STATUS) %s unsupported", phyAttrToString(attr));
 
 		getconfirm.header.length = SIZEOF_PLME_GET_CONFIRM;
 		getconfirm.status = phy_UNSUPPORT_ATTRIBUTE;
-		pcap_write_frame(&getconfirm, SIZEOF_PLME_GET_CONFIRM);
+		send(&getconfirm, SIZEOF_PLME_GET_CONFIRM, NULL, 0);
 	}
 		break;
 	}
@@ -226,7 +263,7 @@ void set_phyPIB(enum phy_pib_attr attr, void *value)
 
 	case phyCCAMode:
 	{
-		setconfirm.status = radio_set_cca_mode(*((uint8_t *)value), *((uint8_t *)value++));
+		setconfirm.status = radio_set_cca_mode(*((uint8_t *)value), *((uint8_t *)value+1));
 	}
 		break;
 
@@ -256,12 +293,12 @@ void set_phyPIB(enum phy_pib_attr attr, void *value)
 	default:
 	{
 		setconfirm.status = phy_UNSUPPORT_ATTRIBUTE;
-		print_debug("[802154_Serial_PHY]: PLME_SET_REQUEST(STATUS) %s unsupported\n", phyAttrToString(attr));
+		print_debug("PLME_SET_REQUEST(STATUS) %s unsupported", phyAttrToString(attr));
 	}
 		break;
 	}
 
-	send(&setconfirm, SIZEOF_PLME_SET_CONFIRM);
+	send(&setconfirm, SIZEOF_PLME_SET_CONFIRM, NULL, 0);
 }
 
 void set_trx_state(enum phyState set_state)
@@ -278,9 +315,9 @@ void set_trx_state(enum phyState set_state)
 	//state = radio_set_trx_state(set_state); // phy_RX_ON, phy_TRX_OFF, phy_FORCE_TRX_OFF or phy_TX_ON
 
 	// todo: phy_state mapping to avr states
-	print_debug("[802154_Serial_PHY]: PLME_SET_TRX_STATE_REQUEST(STATUS) %s unsupported\n", phyStateToString(set_state));
+	print_debug("PLME_SET_TRX_STATE_REQUEST(STATUS) %s unsupported", phyStateToString(set_state));
 
-	send(&settrxstateconfirm, SIZEOF_PLME_SET_TRX_STATE_CONFIRM);
+	send(&settrxstateconfirm, SIZEOF_PLME_SET_TRX_STATE_CONFIRM, NULL, 0);
 }
 
 /*
@@ -292,7 +329,7 @@ void handleMessage(uint8_t * msg)
 	struct pd_plme_hdr *header;
 	header = (struct pd_plme_hdr *)msg;
 
-	print_debug("[802154_Serial_PHY]: Got Message %s, length %u\n", msgTypeToString(header->spid), header->length);
+	print_debug("Got Message %s, length %u", msgTypeToString(header->spid), header->length);
 
 	switch (header->spid) {
 	case PD_DATA_REQUEST:
@@ -301,7 +338,7 @@ void handleMessage(uint8_t * msg)
 		struct pd_data_conf dataconfirm;
 		datarequest = (struct pd_data_req *)msg;
 
-		print_debug("[802154_Serial_PHY]: PD_DATA_REQUEST(PSDULENGTH): %u\n", datarequest->psduLength);
+		print_debug("PD_DATA_REQUEST(PSDULENGTH): %u", datarequest->psduLength);
 
 		/* todo: send data via radio*/
 		//rf230_send((uint8_t *)msg++, datarequest->psduLength);
@@ -320,40 +357,36 @@ void handleMessage(uint8_t * msg)
 		dataconfirm.header.spid = PD_DATA_CONFIRM;
 		dataconfirm.header.length = SIZEOF_PD_DATA_CONFIRM;
 		dataconfirm.status = phy_SUCCESS; // todo: phy_SUCCESS, phy_RX_ON, phy_TRX_OFF or phy_BUSY_TX
-		send(&dataconfirm, SIZEOF_PD_DATA_CONFIRM);
+		send(&dataconfirm, SIZEOF_PD_DATA_CONFIRM, NULL, 0);
 	}
 		break;
 
 	case PLME_CCA_REQUEST:
 	{
-		struct plme_cca_req *ccarequest;
 		struct plme_cca_conf ccaconfirm;
-		ccarequest = (struct plme_cca_req *)msg;
 
-		print_debug("[802154_Serial_PHY]: PLME_CCA_REQUEST(%u)\n", header->spid);
+		print_debug("PLME_CCA_REQUEST(%u)", header->spid);
 
 		// send confirmation
 		ccaconfirm.header.spid = PLME_CCA_CONFIRM;
 		ccaconfirm.header.length = SIZEOF_PLME_CCA_CONFIRM;
 		ccaconfirm.status = phy_TRX_OFF; // todo: phy_TRX_OFF, phy_BUSY or phy_IDLE
-		send(&ccaconfirm, SIZEOF_PLME_CCA_CONFIRM);
+		send(&ccaconfirm, SIZEOF_PLME_CCA_CONFIRM, NULL, 0);
 	}
 		break;
 
 	case PLME_ED_REQUEST:
 	{
-		struct plme_ed_req *edrequest;
 		struct plme_ed_conf edconfirm;
-		edrequest = (struct plme_ed_req *)msg;
 
-		print_debug("[802154_Serial_PHY]: PLME_ED_REQUEST(%u)\n", header->spid);
+		print_debug("PLME_ED_REQUEST(%u)", header->spid);
 
 		// send confirmation
 		edconfirm.header.spid = PLME_ED_CONFIRM;
 		edconfirm.header.length = SIZEOF_PLME_ED_CONFIRM;
 		edconfirm.status = phy_SUCCESS;	// todo: phy_SUCCESS, phy_TRX_OFF or phy_TX_ON
 		edconfirm.energyLevel = 0x00;	// todo: energy level
-		send(&edconfirm, SIZEOF_PLME_ED_CONFIRM);
+		send(&edconfirm, SIZEOF_PLME_ED_CONFIRM, NULL, 0);
 	}
 		break;
 
@@ -362,7 +395,7 @@ void handleMessage(uint8_t * msg)
 		struct plme_get_req *getrequest;
 		getrequest = (struct plme_get_req *)msg;
 
-		print_debug("[802154_Serial_PHY]: PLME_GET_REQUEST(ATTRIBUTE) %s\n", phyAttrToString(getrequest->attribute));
+		print_debug("PLME_GET_REQUEST(ATTRIBUTE) %s", phyAttrToString(getrequest->attribute));
 
 		get_phyPIB(getrequest->attribute);
 	}
@@ -373,7 +406,7 @@ void handleMessage(uint8_t * msg)
 		struct plme_set_trx_state_req  *settrxstaterequest;
 		settrxstaterequest = (struct plme_set_trx_state_req  *)msg;
 
-		print_debug("[802154_Serial_PHY]: PLME_SET_TRX_STATE_REQUEST(STATUS) %s\n", phyStateToString(settrxstaterequest->status));
+		print_debug("PLME_SET_TRX_STATE_REQUEST(STATUS) %s", phyStateToString(settrxstaterequest->status));
 
 		set_trx_state(settrxstaterequest->status);
 	}
@@ -384,14 +417,14 @@ void handleMessage(uint8_t * msg)
 		struct plme_set_req *setrequest;
 		setrequest = (struct plme_set_req *)msg;
 
-		print_debug("[802154_Serial_PHY]: PLME_SET_REQUEST(ATTRIBUTE) %s\n", phyAttrToString(setrequest->attribute));
+		print_debug("PLME_SET_REQUEST(ATTRIBUTE) %s", phyAttrToString(setrequest->attribute));
 
 		set_phyPIB(setrequest->attribute, (void *)msg + SIZEOF_PLME_SET_REQUEST);
 	}
 		break;
 
 	default:
-		print_debug("[802154_Serial_PHY]: Received Message with unknown message type %i!\n", header->spid);
+		print_debug("Received Message with unknown message type %i!", header->spid);
 		break;
 	}
 }
@@ -406,21 +439,16 @@ PROCESS_THREAD(transceiver_init, ev, data)
 	const uint8_t *ptr;
 	uint16_t i;
 
-
 	PROCESS_BEGIN();
 
-	/* starting */
-	print_debug("[802154_Serial_PHY]: Starting...\n");
-	//leds_on(1);
-
 	/* init module */
-	phy_init();
+	initialize();
 
 	/* wait for pcapng stream init */
 	PROCESS_WAIT_EVENT_UNTIL(ev == pcapng_event_shb);
 	pcapng_line_read_shb(&section, (uint8_t *)data);
 //	section = (struct pcapng_section_header_block_t *)(data + sizeof(struct pcapng_block_header_t));
-	print_debug("Section (Magic: %" PRIu32 ", Version: %" PRIu16 ".%" PRIu16 ", Length: %lu)\n",
+	print_debug("Section (Magic: %" PRIu32 ", Version: %" PRIu16 ".%" PRIu16 ", Length: %llu)",
 			section.magic,
 			section.version_major,
 			section.version_minor,
@@ -431,17 +459,10 @@ PROCESS_THREAD(transceiver_init, ev, data)
 	PROCESS_WAIT_EVENT_UNTIL(ev == pcapng_event_idb);
 	pcapng_line_read_idb(&interface, (uint8_t *)data);
 //	interface = (struct pcapng_interface_describtion_block_t *)(data + sizeof(struct pcapng_block_header_t));
-	print_debug("Interface 0 (Linktype: %" PRIu16 ", Snaplen: %" PRIu32 ")\n",
+	print_debug("Interface 0 (Linktype: %" PRIu16 ", Snaplen: %" PRIu32 ")",
 			interface.linktype,
 			interface.snaplen
 	);
-
-	print_debug("Section (Magic: %" PRIu32 ", Version: %" PRIu16 ".%" PRIu16 ", Length: %lu)\n",
-				section.magic,
-				section.version_major,
-				section.version_minor,
-				section.section_length
-		);
 
 	/* wait for packet input */
 	while (1) {
@@ -459,7 +480,7 @@ PROCESS_THREAD(transceiver_init, ev, data)
 
 		pcapng_line_read_epb(&packet, (uint8_t *)data);
 //		packet = (struct pcapng_enhanced_packet_block_t *)(data + sizeof(struct pcapng_block_header_t));
-		print_debug("Packet (Interface: %" PRIu32 ", Time: %" PRIu32 ".%" PRIu32 ",Length: %" PRIu32 ")\n",
+		print_debug("Packet (Interface: %" PRIu32 ", Time: %" PRIu32 ".%" PRIu32 ",Length: %" PRIu32 ")",
 				packet.interface_id,
 				packet.timestamp_high,
 				packet.timestamp_low,

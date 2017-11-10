@@ -6,6 +6,7 @@
  *
  */
 
+#include "uart.h"
 #include "dev/pcap.h"
 #include "dev/pcapng.h"
 #include "dev/pcapng-line.h"
@@ -111,6 +112,8 @@ pcapng_line_write_epb(uint32_t interface, pcap_timeval_s *ts, const void * data,
 	pcapng_block_header_s bh;
 	pcapng_enhanced_packet_block_s epb;
 
+	uint8_t pad[] = {0,0,0,0};
+
 	/* write block header */
 	bh.block_type 			= PCAPNG_BLOCK_TYPE_EPB;
 	bh.block_total_length 	= (uint32_t)(sizeof(bh) + sizeof(epb) + 4); // todo: options len
@@ -125,6 +128,8 @@ pcapng_line_write_epb(uint32_t interface, pcap_timeval_s *ts, const void * data,
 	pcapng_line_write(&bh, sizeof(bh));
 	pcapng_line_write(&epb, sizeof(epb));
 	pcapng_line_write(&data, length);
+	printf("length: %lu", length); // todo: padding!!!!!
+	pcapng_line_write(&pad, length - (length%4));
 	pcapng_line_write(&bh.block_total_length, 4);
 }
 
