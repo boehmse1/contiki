@@ -5,7 +5,7 @@
  *
  */
 
-#include "dev/rs232.h"
+//#include "dev/rs232.h"
 #include "dev/slip-line.h"
 #include "lib/ringbuf.h"
 #include <stdio.h>

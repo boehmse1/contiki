@@ -18,7 +18,7 @@
 #include "sys/clock.h"
 #include <stdio.h>
 
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG && DEBUG == 1
 #define print_debug(fmt, args...) printf("[802154_Serial_PHY]: " fmt "\n", ##args)
 #elif DEBUG && DEBUG == 2
@@ -40,8 +40,8 @@
 #define COUNTER_SECOND CLOCK_SECOND
 #endif
 
-#define IEEE802154_MAC_INTERFACE	1
-#define IEEE802154_PHY_INTERFACE	2
+#define IEEE802154_MAC_INTERFACE	0
+#define IEEE802154_PHY_INTERFACE	1
 
 /*---------------------------------------------------------------------------*/
 PROCESS(transceiver_init, "transceiver_init");
@@ -57,7 +57,7 @@ void initialize()
 	print_debug("initialize");
 
 	/* status led */
-	leds_on(1);
+	//leds_on(1);
 
 	/* init pcap interfaces */
 	pcapng_line_write_shb();
@@ -65,7 +65,7 @@ void initialize()
 	pcapng_line_write_idb(DLT_IEEE802_15_4_PHY, DLT_IEEE802_15_4_LEN);
 
 	/* init radio module*/
-	radio_init();
+	//radio_init();
 }
 
 /*---------------------------------------------------------------------------*/
@@ -87,8 +87,14 @@ void send(const void * header, uint16_t hlen, const void * data, uint16_t d_len)
 	timestamp.ts_sec = (time - (time % COUNTER_SECOND)) / COUNTER_SECOND;
 	timestamp.ts_usec = 1000000 * (time % COUNTER_SECOND) / COUNTER_SECOND;
 
-	pcapng_line_write_epb(IEEE802154_PHY_INTERFACE, &timestamp, &header, hlen);
+	pcapng_line_write_epb(IEEE802154_PHY_INTERFACE, &timestamp, header, hlen);
 	//pcapng_line_write(&data, length);
+
+	print_debug("header bytes send: ");
+	uint8_t i;
+	for (i=0; i<hlen; i++){
+		print_debug("%x, ", *((uint8_t *)(header + i)));
+	}
 }
 
 /*---------------------------------------------------------------------------*/
@@ -427,6 +433,7 @@ void handleMessage(uint8_t * msg)
 		print_debug("Received Message with unknown message type %i!", header->spid);
 		break;
 	}
+	print_debug("\n");
 }
 
 
@@ -435,9 +442,6 @@ PROCESS_THREAD(transceiver_init, ev, data)
 	static struct pcapng_section_header_block_t section;
 	static struct pcapng_interface_description_block_t interface;
 	static struct pcapng_enhanced_packet_block_t packet;
-
-	const uint8_t *ptr;
-	uint16_t i;
 
 	PROCESS_BEGIN();
 
@@ -468,16 +472,6 @@ PROCESS_THREAD(transceiver_init, ev, data)
 	while (1) {
 		memset(&packet, 0, sizeof(packet));
 		PROCESS_WAIT_EVENT_UNTIL(ev == pcapng_event_epb);
-
-		ptr = (uint8_t *)data;
-		i = 0;
-
-		print_debug("HEXDUMP: ");
-		for (i=0; i<sizeof(packet); i++ ) {
-			print_debug("0x%02x, ", *ptr++);
-		}
-		print_debug("\n");
-
 		pcapng_line_read_epb(&packet, (uint8_t *)data);
 //		packet = (struct pcapng_enhanced_packet_block_t *)(data + sizeof(struct pcapng_block_header_t));
 		print_debug("Packet (Interface: %" PRIu32 ", Time: %" PRIu32 ".%" PRIu32 ",Length: %" PRIu32 ")",

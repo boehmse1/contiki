@@ -6,7 +6,7 @@
  *
  */
 
-#include "uart.h"
+//#include "uart.h"
 #include "dev/pcap.h"
 #include "dev/pcapng.h"
 #include "dev/pcapng-line.h"
@@ -15,10 +15,22 @@
 #include <stdio.h>
 
 #define DEBUG 0
-#if DEBUG
-#define PRINTD(FORMAT,args...) printf_P(PSTR(FORMAT),##args)
+#if defined(DEBUG) && DEBUG == 1
+#define print_debug(fmt, args...) printf("[Pcapng_Line]: " fmt "\n", ##args)
+#define PRINTD(...)
+#elif defined(DEBUG) && DEBUG == 2
+#define PRINTD(fmt, args...) printf("[Pcapng_Line]: " fmt "\n", ##args)
+#define print_debug(...)
 #else
 #define PRINTD(...)
+#define print_debug(...)
+#endif
+
+#define FILEWRITE 1
+#if defined(FILEWRITE)
+#define writefile(fmt, args...) fprintf(fmt, ##args)
+#else
+#define writefile(...)
 #endif
 
 #ifdef PCAP_LINE_CONF_BUFSIZE
@@ -41,6 +53,7 @@ enum {
 static uint8_t state = PCAPNG_IDLE;
 static struct ringbuf rxbuf;
 static uint8_t rxbuf_data[BUFSIZE];
+static FILE *f;
 
 PROCESS(pcapng_line_process, "PCAPNG serial driver");
 
@@ -58,8 +71,11 @@ void pcapng_line_write(const void *_ptr, uint32_t len)
 	uint16_t i;
 
 	for (i=0; i<len; i++ ) {
-		uart_putc(*ptr++);
+		//uart_putc(*ptr++);
+		fprintf(f, "%c", *ptr++);
 	}
+
+	fflush(f);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -112,11 +128,12 @@ pcapng_line_write_epb(uint32_t interface, pcap_timeval_s *ts, const void * data,
 	pcapng_block_header_s bh;
 	pcapng_enhanced_packet_block_s epb;
 
+	uint8_t pad_len = 4 - (length%4);	/* length of padding */
 	uint8_t pad[] = {0,0,0,0};
 
 	/* write block header */
 	bh.block_type 			= PCAPNG_BLOCK_TYPE_EPB;
-	bh.block_total_length 	= (uint32_t)(sizeof(bh) + sizeof(epb) + 4); // todo: options len
+	bh.block_total_length 	= (uint32_t)(sizeof(bh) + sizeof(epb) + length + pad_len + 4); // todo: options len
 
 	/* write block content */
 	epb.interface_id 		= interface;
@@ -127,9 +144,8 @@ pcapng_line_write_epb(uint32_t interface, pcap_timeval_s *ts, const void * data,
 
 	pcapng_line_write(&bh, sizeof(bh));
 	pcapng_line_write(&epb, sizeof(epb));
-	pcapng_line_write(&data, length);
-	printf("length: %lu", length); // todo: padding!!!!!
-	pcapng_line_write(&pad, length - (length%4));
+	pcapng_line_write(data, length);
+	pcapng_line_write(&pad, pad_len);
 	pcapng_line_write(&bh.block_total_length, 4);
 }
 
@@ -324,5 +340,6 @@ pcapng_line_init(void)
   ringbuf_init(&rxbuf, rxbuf_data, sizeof(rxbuf_data));
   process_start(&pcapng_line_process, NULL);
   /* todo: init pcap constants e.g., time */
+  f = fopen("test.pcapng", "wb");
 }
 /*---------------------------------------------------------------------------*/

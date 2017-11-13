@@ -58,7 +58,10 @@
 #include "ctk/ctk.h"
 #include "ctk/ctk-curses.h"
 
+#include "dev/pcap.h"
+#include "dev/pcapng.h"
 #include "dev/serial-line.h"
+#include "dev/pcapng-line.h"
 
 #include "net/ip/uip.h"
 
@@ -130,7 +133,7 @@ stdin_handle_fd(fd_set *rset, fd_set *wset)
   char c;
   if(FD_ISSET(STDIN_FILENO, rset)) {
     if(read(STDIN_FILENO, &c, 1) > 0) {
-      serial_line_input_byte(c);
+      pcapng_line_input_byte(c);
     }
   }
 }
@@ -240,7 +243,7 @@ main(int argc, char **argv)
   process_start(&tcpip_process, NULL);
 #endif
 
-  serial_line_init();
+  pcapng_line_init();
 
   autostart_start(autostart_processes);
 

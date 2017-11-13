@@ -170,7 +170,7 @@ typedef struct pd_data_req {
 /** pd data confirm */
 typedef struct pd_data_conf {
 	pd_plme_hdr header;
-	phy_state status;					// SUCCESS, RX_ON, TRX_OFF, BUSY_TX
+	uint8_t status;					// SUCCESS, RX_ON, TRX_OFF, BUSY_TX
 }pd_data_conf;
 
 /** pd data indication */
@@ -191,7 +191,7 @@ typedef struct plme_cca_req {
 /** plme cca confirm */
 typedef struct plme_cca_conf {
 	pd_plme_hdr header;
-	phy_state status;					// TRX_OFF, BUSY, IDLE
+	uint8_t status;						// TRX_OFF, BUSY, IDLE
 }plme_cca_conf;
 
 /** --------------------------- */
@@ -204,7 +204,7 @@ typedef struct plme_ed_req {
 /** plme ed confirm */
 typedef struct plme_ed_conf {
 	pd_plme_hdr header;
-    phy_state status;					// SUCCESS, TRX_OFF, TX_ON
+	uint8_t status;						// SUCCESS, TRX_OFF, TX_ON
     uint8_t energyLevel;				// 0x00-0xff
 }plme_ed_conf;
 
@@ -213,14 +213,14 @@ typedef struct plme_ed_conf {
 /** plme get request */
 typedef struct plme_get_req {
 	pd_plme_hdr header;
-    phy_pib_attr attribute;				// See phy_pib_attr
+	uint8_t attribute;					// See phy_pib_attr
 }plme_get_req;
 
 /** plme get confirm */
 typedef struct plme_get_conf {
 	pd_plme_hdr header;
-	phy_state status;					// SUCCESS, UNSUPPORTED_ATTRIBUTE
-    phy_pib_attr attribute;				// See phy_pib_attr
+	uint8_t status;						// SUCCESS, UNSUPPORTED_ATTRIBUTE
+	uint8_t attribute;					// See phy_pib_attr
     // specific PIB attribute value
 }plme_get_conf;
 
@@ -229,13 +229,13 @@ typedef struct plme_get_conf {
 /** plme set trx state request */
 typedef struct plme_set_trx_state_req {
 	pd_plme_hdr header;
-	phy_state status;					// RX_ON, TRX_OFF, FORCE_TRX_OFF, TX_ON
+	uint8_t status;						// RX_ON, TRX_OFF, FORCE_TRX_OFF, TX_ON
 }plme_set_trx_state_req;
 
 /** plme set trx state request */
 typedef struct plme_set_trx_state_conf {
 	pd_plme_hdr header;
-	phy_state status;					// SUCCESS, RX_ON, TRX_OFF, TX_ON
+	uint8_t status;						// SUCCESS, RX_ON, TRX_OFF, TX_ON
 }plme_set_trx_state_conf;
 
 /** --------------------------- */
@@ -243,15 +243,15 @@ typedef struct plme_set_trx_state_conf {
 /** plme set request */
 typedef struct plme_set_req {
 	pd_plme_hdr header;
-    phy_pib_attr attribute;				// See phy_pib_attr
+	uint8_t attribute;					// See phy_pib_attr
     // specific PIB attribute value
 }plme_set_req;
 
 /** plme set confirm */
 typedef struct plme_set_conf {
 	pd_plme_hdr header;
-	phy_state status;					// SUCCESS, UNSUPPORTED_ATTRIBUTE, INVALID_PARAMETER,READ_ONLY
-    phy_pib_attr attribute;				// See phy_pib_attr
+	uint8_t status;						// SUCCESS, UNSUPPORTED_ATTRIBUTE, INVALID_PARAMETER,READ_ONLY
+	uint8_t attribute;					// See phy_pib_attr
 }plme_set_conf;
 
 /** --------------------------- */
