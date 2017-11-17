@@ -71,7 +71,7 @@ void pcapng_line_write(const void *_ptr, uint32_t len)
 	uint16_t i;
 
 	for (i=0; i<len; i++ ) {
-		//uart_putc(*ptr++);
+		PRINTD("%u, "*ptr++);
 		fprintf(f, "%c", *ptr++);
 	}
 
@@ -158,10 +158,9 @@ pcapng_line_write_cb(const void * data, uint32_t length)
 
 /*---------------------------------------------------------------------------*/
 void
-pcapng_line_read_shb(pcapng_section_header_block_s * section, uint8_t * ptr)
+pcapng_line_read_shb(uint8_t * ptr, pcapng_section_header_block_s * section)
 {
-	const uint8_t *data = ptr;
-	data += sizeof(pcapng_block_header_s);
+	uint8_t *data = ptr + sizeof(pcapng_block_header_s);
 
 	section->magic |= (uint32_t) *data++;
 	section->magic |= (uint32_t) *data++ << 8;
@@ -183,10 +182,9 @@ pcapng_line_read_shb(pcapng_section_header_block_s * section, uint8_t * ptr)
 
 /*---------------------------------------------------------------------------*/
 void
-pcapng_line_read_idb(pcapng_interface_description_block_s * interface, uint8_t * ptr)
+pcapng_line_read_idb(uint8_t * ptr, pcapng_interface_description_block_s * interface)
 {
-	const uint8_t *data = ptr;
-	data += sizeof(pcapng_block_header_s);
+	uint8_t *data = ptr + sizeof(pcapng_block_header_s);
 
 	interface->linktype |= (uint16_t) *data++;
 	interface->linktype |= (uint16_t) *data++ << 8;
@@ -200,10 +198,9 @@ pcapng_line_read_idb(pcapng_interface_description_block_s * interface, uint8_t *
 
 /*---------------------------------------------------------------------------*/
 void
-pcapng_line_read_epb(pcapng_enhanced_packet_block_s * packet, uint8_t * ptr)
+pcapng_line_read_epb(uint8_t * ptr, pcapng_enhanced_packet_block_s * packet)
 {
-	const uint8_t *data = ptr;
-	data += sizeof(pcapng_block_header_s);
+	uint8_t *data = ptr + sizeof(pcapng_block_header_s);
 
 	packet->interface_id |= (uint32_t) *data++;
 	packet->interface_id |= (uint32_t) *data++ << 8;
@@ -340,6 +337,6 @@ pcapng_line_init(void)
   ringbuf_init(&rxbuf, rxbuf_data, sizeof(rxbuf_data));
   process_start(&pcapng_line_process, NULL);
   /* todo: init pcap constants e.g., time */
-  f = fopen("test.pcapng", "wb");
+  f = fopen("test2.pcapng", "wb");
 }
 /*---------------------------------------------------------------------------*/

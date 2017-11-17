@@ -34,11 +34,11 @@ void pcapng_line_write_epb(uint32_t interface, pcap_timeval_s *ts, const void * 
 
 void pcapng_line_write_cb(const void * data, uint32_t length);
 
-void pcapng_line_read_shb(pcapng_section_header_block_s * section, uint8_t * ptr);
+void pcapng_line_read_shb(uint8_t * ptr, pcapng_section_header_block_s * section);
 
-void pcapng_line_read_idb(pcapng_interface_description_block_s * interface, uint8_t * ptr);
+void pcapng_line_read_idb(uint8_t * ptr, pcapng_interface_description_block_s * interface);
 
-void pcapng_line_read_epb(pcapng_enhanced_packet_block_s * packet, uint8_t * ptr);
+void pcapng_line_read_epb(uint8_t * ptr, pcapng_enhanced_packet_block_s * packet);
 
 /**
  * Get one byte of input from the serial driver.

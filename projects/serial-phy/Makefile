@@ -11,7 +11,7 @@ ifeq ($(TARGET),mbxxx)
 CFLAGS+= -DSNIFFER_FRAMES_HAVE_FCS
 endif
 
-PROJECT_SOURCEFILES+= transceiver-rdc.c atmega128rfa1.c
+PROJECT_SOURCEFILES+= transceiver-rdc.c atmega128rfa1.c phy_service.c
 include $(CONTIKI)/Makefile.include
 
 sniff:

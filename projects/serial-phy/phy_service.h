@@ -5,8 +5,10 @@
  *
  */
 
-#ifndef __PHY_SERVICES_H__
-#define __PHY_SERVICES_H__
+#include <stdint.h>
+
+#ifndef __PHY_SERVICE_H__
+#define __PHY_SERVICE_H__
 
 /** protocol message types for PD-SAP and PLME-SAP service primitives */
 typedef enum msg_type_sap{
@@ -122,16 +124,44 @@ inline static const char* phyAttrToString(phy_pib_attr x)
     }
 }
 
+typedef uint8_t phyAttrCurrentChannel;
+/** The device only needs to add the rows (channel pages) for the PHY(s) it supports. */
+typedef uint32_t phyAttrChannelsSupported;			/* read only */
+typedef uint8_t phyAttrTransmitPower;
+typedef uint8_t phyAttrCCAMode;
+typedef uint8_t phyAttrCurrentPage;
+typedef uint16_t phyAttrMaxFrameDuration;			/* read only */
+typedef uint8_t phyAttrSHRDuration;					/* read only */
+/** The possible float values 0.4, 1.6, 2.0, 8.0 represented as unsigned int here
+ * MSB's b4 .. b7 represent the even, the LSB's b0 .. b3 the odd part of the value */
+typedef uint8_t phyAttrSymbolsPerOctet;
+
 typedef struct PhyPIB{
-	uint8_t phyCurrentChannel;
-	uint8_t phyChannelsSupported[32][32];	/* read only */
-	uint8_t phyTransmitPower;
-	uint8_t phyCCAMode;
-	uint8_t phyCurrentPage;
-	uint16_t phyMaxFrameDuration;			/* read only */
-	uint8_t phySHRDuration;					/* read only */
-	float phySymbolsPerOctet;				/* read only */
+	phyAttrCurrentChannel currentChannel;
+	phyAttrChannelsSupported channelsSupported;		/* read only */
+	phyAttrTransmitPower transmitPower;
+	phyAttrCCAMode cCAMode;
+	phyAttrCurrentPage currentPage;
+	phyAttrMaxFrameDuration maxFrameDuration;		/* read only */
+	phyAttrSHRDuration sHRDuration;					/* read only */
+	phyAttrSymbolsPerOctet symbolsPerOctet;			/* read only */
 }PhyPIB;
+
+/** @brief Union capable of holding any specific PHY PIB value */
+typedef union
+{
+	phyAttrCurrentChannel currentChannel;
+	phyAttrChannelsSupported channelsSupported;		/* read only */
+	phyAttrTransmitPower transmitPower;
+	phyAttrCCAMode cCAMode;
+	phyAttrCurrentPage currentPage;
+	phyAttrMaxFrameDuration maxFrameDuration;		/* read only */
+	phyAttrSHRDuration sHRDuration;					/* read only */
+	phyAttrSymbolsPerOctet symbolsPerOctet;			/* read only */
+} PhyPIB_value;
+
+/** PHY message header size */
+#define maxPHYMessageHeaderSize 4;
 
 /** hardware dependent PHY constants */
 #define aMaxPHYPacketSize 127
@@ -152,108 +182,135 @@ typedef struct PhyPIB{
 #define SIZEOF_PLME_SET_REQUEST					3
 #define SIZEOF_PLME_SET_CONFIRM					4
 
-/** ------------- PHY Service Primitives Header -------------- */
-typedef struct pd_plme_hdr {
-	uint8_t spid;
-	uint8_t length;
-}pd_plme_hdr;
-
 /** -------------- PHY Data Service Primitives --------------- */
 
 /** pd data request */
-typedef struct pd_data_req {
-	pd_plme_hdr header;
+typedef struct pd_data_req
+{
     uint8_t psduLength;       			// ≤ aMaxPHYPacketSize
-    // PSDU Payload 					// encapsulated set of octets
-}pd_data_req;
+    uint8_t data[aMaxPHYPacketSize];	/**< payload (uninterpreted byte sequence) */
+} pd_data_req;
 
 /** pd data confirm */
-typedef struct pd_data_conf {
-	pd_plme_hdr header;
+typedef struct pd_data_conf
+{
 	uint8_t status;					// SUCCESS, RX_ON, TRX_OFF, BUSY_TX
-}pd_data_conf;
+} pd_data_conf;
 
 /** pd data indication */
-typedef struct pd_data_ind {
-	pd_plme_hdr header;
+typedef struct pd_data_ind
+{
 	uint8_t psduLength;       			// ≤ aMaxPHYPacketSize
 	uint8_t ppduLinkQuality;  			// 0x00-0xff
-	// PSDU Payload 					// encapsulated set of octets
-}pd_data_ind;
+	uint8_t data[aMaxPHYPacketSize];	/**< payload (uninterpreted byte sequence) */
+} pd_data_ind;
 
 /** ----------- PHY Management Service Primitives ------------ */
 
 /** plme cca request */
-typedef struct plme_cca_req {
-	pd_plme_hdr header;
-}plme_cca_req;
+typedef struct plme_cca_req
+{
+} plme_cca_req;
 
 /** plme cca confirm */
-typedef struct plme_cca_conf {
-	pd_plme_hdr header;
+typedef struct plme_cca_conf
+{
 	uint8_t status;						// TRX_OFF, BUSY, IDLE
-}plme_cca_conf;
+} plme_cca_conf;
 
 /** --------------------------- */
 
 /** plme ed request */
-typedef struct plme_ed_req {
-	pd_plme_hdr header;
-}plme_ed_req;
+typedef struct plme_ed_req
+{
+} plme_ed_req;
 
 /** plme ed confirm */
-typedef struct plme_ed_conf {
-	pd_plme_hdr header;
+typedef struct plme_ed_conf
+{
 	uint8_t status;						// SUCCESS, TRX_OFF, TX_ON
     uint8_t energyLevel;				// 0x00-0xff
-}plme_ed_conf;
+} plme_ed_conf;
 
 /** --------------------------- */
 
 /** plme get request */
-typedef struct plme_get_req {
-	pd_plme_hdr header;
+typedef struct plme_get_req
+{
 	uint8_t attribute;					// See phy_pib_attr
-}plme_get_req;
+} plme_get_req;
 
 /** plme get confirm */
-typedef struct plme_get_conf {
-	pd_plme_hdr header;
+typedef struct plme_get_conf
+{
 	uint8_t status;						// SUCCESS, UNSUPPORTED_ATTRIBUTE
 	uint8_t attribute;					// See phy_pib_attr
-    // specific PIB attribute value
-}plme_get_conf;
+	PhyPIB_value value;					// specific PIB attribute value
+} plme_get_conf;
 
 /** --------------------------- */
 
 /** plme set trx state request */
-typedef struct plme_set_trx_state_req {
-	pd_plme_hdr header;
+typedef struct plme_set_trx_state_req
+{
 	uint8_t status;						// RX_ON, TRX_OFF, FORCE_TRX_OFF, TX_ON
-}plme_set_trx_state_req;
+} plme_set_trx_state_req;
 
 /** plme set trx state request */
-typedef struct plme_set_trx_state_conf {
-	pd_plme_hdr header;
+typedef struct plme_set_trx_state_conf
+{
 	uint8_t status;						// SUCCESS, RX_ON, TRX_OFF, TX_ON
-}plme_set_trx_state_conf;
+} plme_set_trx_state_conf;
 
 /** --------------------------- */
 
 /** plme set request */
-typedef struct plme_set_req {
-	pd_plme_hdr header;
+typedef struct plme_set_req
+{
 	uint8_t attribute;					// See phy_pib_attr
-    // specific PIB attribute value
-}plme_set_req;
+    PhyPIB_value value;					// specific PIB attribute value
+} plme_set_req;
 
 /** plme set confirm */
-typedef struct plme_set_conf {
-	pd_plme_hdr header;
+typedef struct plme_set_conf
+{
 	uint8_t status;						// SUCCESS, UNSUPPORTED_ATTRIBUTE, INVALID_PARAMETER,READ_ONLY
 	uint8_t attribute;					// See phy_pib_attr
-}plme_set_conf;
+} plme_set_conf;
 
 /** --------------------------- */
 
-#endif /* __PHY_SERVICES_H__ */
+/** @brief Union capable of holding any specific PHY messages */
+typedef union
+{
+	pd_data_req data_req;						/**< PHY_DATA_req */
+	pd_data_conf data_conf;						/**< PHY_DATA_conf */
+	pd_data_ind data_ind;						/**< PHY_DATA_ind */
+	plme_cca_req cca_req;						/**< PHY_CCA_req */
+	plme_cca_conf cca_conf;						/**< PHY_CCA_conf */
+	plme_ed_req ed_req;							/**< PHY_ED_req */
+	plme_ed_conf ed_conf;						/**< PHY_ED_conf */
+	plme_get_req get_req;						/**< PHY_GET_req */
+	plme_get_conf get_conf;						/**< PHY_GET_conf */
+	plme_set_trx_state_req set_trx_state_req;	/**< PHY_SET_TRX_STATE_req */
+	plme_set_trx_state_conf set_trx_state_conf;	/**< PHY_SET_TRX_STATE_conf */
+	plme_set_req set_req;						/**< PHY_SET_TRX_STATE_req */
+	plme_set_conf set_conf;						/**< PHY_SET_TRX_STATE_conf */
+} PHY_msg_x;
+
+/** @brief Compound SDU message */
+typedef struct
+{
+  uint8_t type;		/**< PHY SDU type, e.g. PD_DATA_REQUEST */
+  uint8_t length;	/**< PHY SDU length */
+  PHY_msg_x x;		/**< specific SDU */
+} PHY_msg;
+
+int serialize_msg(PHY_msg * msg, uint8_t buffer[aMaxPHYPacketSize]);
+int deserialize_msg(uint8_t *stream, PHY_msg *msg);
+void send_msg(PHY_msg * msg);
+void print_msg_payload(uint8_t data[aMaxPHYPacketSize], uint8_t length, char *info);
+void print_msg_bytes(PHY_msg *msg, uint8_t length);
+void print_msg(PHY_msg * msg, char *info);
+
+#endif /* __PHY_SERVICE_H__ */

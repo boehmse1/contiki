@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 
-#include "phy_services.h"
+#include "phy_service.h"
 
 /*---------------------------------------------------------------------------*/
 /* energy level resolution 0-83, ED sensitivity -90dBm, steps are 1dBm PHY_ED_LEVEL
@@ -15,19 +15,19 @@
  */
 #define THRESHOLD 		-90
 
-static struct PhyPIB *pib;
+static struct PhyPIB pib;
 
 void radio_init()
 {
 	//pib = (struct PhyPIB*) malloc(sizeof(struct PhyPIB));
-	pib->phyCurrentChannel = 24;
+	pib.currentChannel = 24;
 	//pib->phyChannelsSupported = ;
-	pib->phyTransmitPower = 0;
-	pib->phyCCAMode = 0;
-	pib->phyCurrentPage = 0;
-	pib->phyMaxFrameDuration = 0;
-	pib->phySHRDuration = 0;
-	pib->phySymbolsPerOctet = 0;
+	pib.transmitPower = 3;
+	pib.cCAMode = 0;
+	pib.currentPage = 0;
+	pib.maxFrameDuration = 0;
+	pib.sHRDuration = 0;
+	pib.symbolsPerOctet = 0;
 }
 
 int8_t radio_get_rssi_threshold()
@@ -37,7 +37,7 @@ int8_t radio_get_rssi_threshold()
 
 uint8_t radio_get_operating_channel()
 {
-	return pib->phyCurrentChannel;
+	return pib.currentChannel;
 }
 
 enum phyState radio_set_operating_channel(uint8_t channel)
@@ -53,7 +53,7 @@ enum phyState radio_set_operating_channel(uint8_t channel)
 
 uint8_t radio_get_tx_power_level()
 {
-	return pib->phyTransmitPower;
+	return pib.transmitPower;
 }
 
 enum phyState radio_set_tx_power_level(uint8_t power)
@@ -64,7 +64,7 @@ enum phyState radio_set_tx_power_level(uint8_t power)
 
 uint8_t radio_get_cca_mode()
 {
-	return pib->phyCCAMode;
+	return pib.cCAMode;
 }
 
 enum phyState radio_set_cca_mode(uint8_t mode, uint8_t thres)
@@ -75,7 +75,7 @@ enum phyState radio_set_cca_mode(uint8_t mode, uint8_t thres)
 
 uint8_t radio_get_current_page()
 {
-	return pib->phyCurrentPage;
+	return pib.currentPage;
 }
 
 enum phyState radio_set_current_page(uint8_t page)
@@ -86,15 +86,15 @@ enum phyState radio_set_current_page(uint8_t page)
 
 uint16_t radio_get_max_frame_duration()
 {
-	return pib->phyMaxFrameDuration;
+	return pib.maxFrameDuration;
 }
 
 uint8_t radio_get_shr_duration()
 {
-	return pib->phySHRDuration;
+	return pib.sHRDuration;
 }
 
 float radio_get_symbols_per_octet()
 {
-	return pib->phySymbolsPerOctet;
+	return pib.symbolsPerOctet;
 }
