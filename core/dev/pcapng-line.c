@@ -14,7 +14,7 @@
 #include "lib/ringbuf.h"
 #include <stdio.h>
 
-#define DEBUG 0
+#define DEBUG 1
 #if defined(DEBUG) && DEBUG == 1
 #define print_debug(fmt, args...) printf("[Pcapng_Line]: " fmt "\n", ##args)
 #define PRINTD(...)
@@ -71,7 +71,7 @@ void pcapng_line_write(const void *_ptr, uint32_t len)
 	uint16_t i;
 
 	for (i=0; i<len; i++ ) {
-		PRINTD("%u, "*ptr++);
+		//print_debug("%u \n", *ptr++);
 		fprintf(f, "%c", *ptr++);
 	}
 

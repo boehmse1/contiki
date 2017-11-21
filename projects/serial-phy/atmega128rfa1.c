@@ -5,96 +5,126 @@
  *
  */
 
-#include <stdint.h>
+#include "atmega128rfa1.h"
 
-#include "phy_service.h"
+#define DEBUG 1
+#if DEBUG && DEBUG == 1
+#define print_debug(fmt, args...) printf("[ATMEGA128RFA1]: " fmt "\n", ##args)
+#elif DEBUG && DEBUG == 2
+#define print_debug(fmt, args...) printf("DEBUG: %s:%d: " fmt, \
+    __FILE__, __LINE__, ##args)
+#else
+#define print_debug(...)
+#endif
 
-/*---------------------------------------------------------------------------*/
-/* energy level resolution 0-83, ED sensitivity -90dBm, steps are 1dBm PHY_ED_LEVEL
- * ATmega128RFA1 datasheet - Figure 9-18
+/**
+ * @brief Set the current transmission channel
+ *
+ * @param channel to be set
+ *
+ * @return PHY state phy_SUCCESS or phy_INVALID_PARAMETER
  */
-#define THRESHOLD 		-90
-
-static struct PhyPIB pib;
-
-void radio_init()
-{
-	//pib = (struct PhyPIB*) malloc(sizeof(struct PhyPIB));
-	pib.currentChannel = 24;
-	//pib->phyChannelsSupported = ;
-	pib.transmitPower = 3;
-	pib.cCAMode = 0;
-	pib.currentPage = 0;
-	pib.maxFrameDuration = 0;
-	pib.sHRDuration = 0;
-	pib.symbolsPerOctet = 0;
-}
-
-int8_t radio_get_rssi_threshold()
-{
-	return THRESHOLD;
-}
-
-uint8_t radio_get_operating_channel()
-{
-	return pib.currentChannel;
-}
-
-enum phyState radio_set_operating_channel(uint8_t channel)
+phy_state
+radio_set_operating_channel(uint8_t channel)
 {
 	/* todo */
 	return phy_SUCCESS;
 }
 
-//uint8_t radio_get_channels_supported()
-//{
-//	return pib->phyChannelsSupported;
-//}
-
-uint8_t radio_get_tx_power_level()
-{
-	return pib.transmitPower;
-}
-
-enum phyState radio_set_tx_power_level(uint8_t power)
+/**
+ * @brief Set the transmission power level
+ *
+ * @param power level to be set
+ *
+ * @return PHY state phy_SUCCESS or phy_INVALID_PARAMETER
+ */
+phy_state
+radio_set_tx_power_level(uint8_t power)
 {
 	/* todo */
 	return phy_SUCCESS;
 }
 
-uint8_t radio_get_cca_mode()
-{
-	return pib.cCAMode;
-}
-
-enum phyState radio_set_cca_mode(uint8_t mode, uint8_t thres)
+/**
+ * @brief Set the CCA mode
+ *
+ * @param mode to be set
+ * @param thres for the cca modes
+ *
+ * @return PHY state phy_SUCCESS or phy_INVALID_PARAMETER
+ */
+phy_state
+radio_set_cca_mode(uint8_t mode, uint8_t thres)
 {
 	/* todo */
 	return phy_SUCCESS;
 }
 
-uint8_t radio_get_current_page()
-{
-	return pib.currentPage;
-}
-
-enum phyState radio_set_current_page(uint8_t page)
+/**
+ * @brief Set the TRX state
+ *
+ * @param state to be set
+ *
+ * @return PHY state phy_SUCCESS, phy_RX_ON, phy_TRX_OFF, or phy_TX_ON
+ */
+phy_state
+radio_set_trx_state(phy_state state)
 {
 	/* todo */
-	return phy_READ_ONLY;
+	// todo: phy_state mapping to avr states
+	return phy_SUCCESS;
 }
 
-uint16_t radio_get_max_frame_duration()
+/**
+ * @brief Perform a Clear Channel Assessment
+ *
+ * @return PHY state phy_IDLE, phy_TRX_OFF, or phy_BUSY
+ */
+phy_state
+radio_perform_cca()
 {
-	return pib.maxFrameDuration;
+	/* todo */
+	print_debug("Performing CCA...");
+	return phy_IDLE; // TRX_OFF, BUSY, or IDLE
 }
 
-uint8_t radio_get_shr_duration()
+/**
+ * @brief Perform an Energy Detection
+ *
+ * @param energyLevel to write the result into
+ *
+ * @return PHY state phy_SUCCESS, phy_TRX_OFF, or phy_TX_ON
+ */
+phy_state
+radio_perform_ed(uint8_t *energyLevel)
 {
-	return pib.sHRDuration;
+	/* todo  */
+	print_debug("Performing ED...");
+	*energyLevel = 0xFF;
+	return phy_SUCCESS;
 }
 
-float radio_get_symbols_per_octet()
+/**
+ * @brief Send data via the radio interface
+ *
+ * @param data to be send
+ *
+ * @return PHY state phy_SUCCESS, phy_RX_ON, phy_TRX_OFF or phy_BUSY_TX
+ */
+phy_state
+radio_send(uint8_t * data)
 {
-	return pib.symbolsPerOctet;
+	/* todo: send data via radio*/
+	//rf230_send((uint8_t *)msg++, datarequest->psduLength);
+
+	/* todo: or via contiki's netstack*/
+	//packetbuf_copyfrom((uint8_t *)data,
+	//NETSTACK_RADIO.send(packetbuf_hdrptr(), length);
+	//packetbuf_clear();
+
+	/* old callback */
+	//uint8_t length = packetbuf_totlen();
+	//NETSTACK_RADIO.send(packetbuf_hdrptr(), length);
+	//packetbuf_clear();
+	return phy_SUCCESS;
 }
