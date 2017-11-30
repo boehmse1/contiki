@@ -101,10 +101,10 @@ typedef unsigned long off_t;
 
 /* RADIOSTATS is used in rf230bb, clock.c and the webserver cgi to report radio usage */
 /* It has less overhead than ENERGEST */
-#define RADIOSTATS                1
+#define RADIOSTATS                0
 
 /* More extensive stats, via main loop printfs or webserver status pages */
-#define ENERGEST_CONF_ON          1
+#define ENERGEST_CONF_ON          0
 
 /* Packet statistics */
 typedef unsigned short uip_stats_t;
@@ -136,7 +136,7 @@ typedef unsigned short uip_stats_t;
 
 /* Network setup */
 /* TX routine passes the cca/ack result in the return parameter */
-#define RDC_CONF_HARDWARE_ACK    1
+#define RDC_CONF_HARDWARE_ACK    0
 /* TX routine does automatic cca and optional backoffs */
 #define RDC_CONF_HARDWARE_CSMA   1
 /* Allow MCU sleeping between channel checks */
@@ -190,9 +190,9 @@ typedef unsigned short uip_stats_t;
 #define NETSTACK_CONF_RADIO       rf230_driver
 #define CHANNEL_802_15_4          26
 /* AUTOACK receive mode gives better rssi measurements, even if ACK is never requested */
-#define RF230_CONF_AUTOACK        1
+#define RF230_CONF_AUTOACK        0
 /* 1 + Number of auto retry attempts 0-15 (0 implies don't use extended TX_ARET_ON mode) */
-#define RF230_CONF_FRAME_RETRIES    2
+#define RF230_CONF_FRAME_RETRIES  0
 /* Number of csma retry attempts 0-5 in extended tx mode (7 does immediate tx with no csma) */
 #define RF230_CONF_CSMA_RETRIES   5
 /* Default is one RAM buffer for received packets. More than one may benefit multiple TCP connections or ports */

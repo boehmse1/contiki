@@ -84,9 +84,11 @@
 #define RF230_CONF_CHECKSUM 0
 #endif
 
+#define RF230_CONF_AUTOACK 0
+
 /* Autoack setting ignored in non-extended mode */
 #ifndef RF230_CONF_AUTOACK
-#define RF230_CONF_AUTOACK 1
+#define RF230_CONF_AUTOACK 0
 #endif
 
 /* We need to turn off autoack in promiscuous mode */

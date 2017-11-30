@@ -6,13 +6,11 @@
  *
  */
 
-//#include "uart.h"
 #include "dev/pcap.h"
 #include "dev/pcapng.h"
 #include "dev/pcapng-line.h"
 #include "net/packetbuf.h"
 #include "lib/ringbuf.h"
-#include <stdio.h>
 
 #define DEBUG 0
 #if defined(DEBUG) && DEBUG == 1
@@ -26,11 +24,13 @@
 #define print_debug(...)
 #endif
 
-#define FILEWRITE 1
-#if defined(FILEWRITE)
-#define writefile(fmt, args...) fprintf(fmt, ##args)
-#else
+#define FILEWRITE 0
+#if FILEWRITE==0
+#include "uart.h"
 #define writefile(...)
+#else
+#include <stdio.h>
+#define writefile(fmt, args...) fprintf(fmt, ##args)
 #endif
 
 #ifdef PCAP_LINE_CONF_BUFSIZE
@@ -53,7 +53,9 @@ enum {
 static uint8_t state = PCAPNG_IDLE;
 static struct ringbuf rxbuf;
 static uint8_t rxbuf_data[BUFSIZE];
+#if FILEWRITE
 static FILE *f;
+#endif
 
 PROCESS(pcapng_line_process, "PCAPNG serial driver");
 
@@ -71,11 +73,16 @@ void pcapng_line_write(const void *_ptr, uint32_t len)
 	uint16_t i;
 
 	for (i=0; i<len; i++ ) {
-		PRINTD("%u, "*ptr++);
-		fprintf(f, "%c", *ptr++);
+#if FILEWRITE
+		writefile(f, "%c", *ptr++);
+#else
+		uart_putc(*ptr++);
+#endif
 	}
 
+#if FILEWRITE
 	fflush(f);
+#endif
 }
 
 /*---------------------------------------------------------------------------*/
@@ -337,6 +344,8 @@ pcapng_line_init(void)
   ringbuf_init(&rxbuf, rxbuf_data, sizeof(rxbuf_data));
   process_start(&pcapng_line_process, NULL);
   /* todo: init pcap constants e.g., time */
+#if FILEWRITE
   f = fopen("test2.pcapng", "wb");
+#endif
 }
 /*---------------------------------------------------------------------------*/

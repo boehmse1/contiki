@@ -1,6 +1,10 @@
 CONTIKI = ../..
-CONTIKI_PROJECT = transceiver
+#CONTIKI_PROJECT = transceiver
+CONTIKI_PROJECT = transceiver.elf
 all: $(CONTIKI_PROJECT)
+
+#TARGET=native
+TARGET=rcb128rfa1
 
 UIP_CONF_RPL=0
 UIP_CONF_IPV6=0

@@ -4,7 +4,7 @@ CONTIKI_CORE=contiki-main
 CONTIKI_TARGET_MAIN = ${CONTIKI_CORE}.o
 CONTIKI_TARGET_SOURCEFILES += contiki-main.c params.c
 #Needed for slip
-CONTIKI_TARGET_SOURCEFILES += slip-line.c pcap-line.c pcapng-line.c gpios.c uart.c spid.c
+CONTIKI_TARGET_SOURCEFILES += slip-line.c pcap-line.c pcapng-line.c gpios.c uart.c spid.c usb-stb-128rfa1.c
 
 CONTIKIAVR=$(CONTIKI)/cpu/avr
 CONTIKIBOARD=.

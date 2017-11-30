@@ -5,96 +5,149 @@
  *
  */
 
-#include <stdint.h>
+#include "atmega128rfa1.h"
 
-#include "phy_service.h"
+#include "net/netstack.h"
+#include "net/packetbuf.h"
 
-/*---------------------------------------------------------------------------*/
-/* energy level resolution 0-83, ED sensitivity -90dBm, steps are 1dBm PHY_ED_LEVEL
- * ATmega128RFA1 datasheet - Figure 9-18
+#define DEBUG 0
+#if DEBUG && DEBUG == 1
+#define print_debug(fmt, args...) printf("[ATMEGA128RFA1]: " fmt "\n", ##args)
+#elif DEBUG && DEBUG == 2
+#define print_debug(fmt, args...) printf("DEBUG: %s:%d: " fmt, \
+    __FILE__, __LINE__, ##args)
+#else
+#define print_debug(...)
+#endif
+
+/**
+ * @brief Set the current transmission channel
+ *
+ * @param channel to be set
+ *
+ * @return PHY state phy_SUCCESS or phy_INVALID_PARAMETER
  */
-#define THRESHOLD 		-90
-
-static struct PhyPIB pib;
-
-void radio_init()
+phy_state
+radio_set_operating_channel(uint8_t channel)
 {
-	//pib = (struct PhyPIB*) malloc(sizeof(struct PhyPIB));
-	pib.currentChannel = 24;
-	//pib->phyChannelsSupported = ;
-	pib.transmitPower = 3;
-	pib.cCAMode = 0;
-	pib.currentPage = 0;
-	pib.maxFrameDuration = 0;
-	pib.sHRDuration = 0;
-	pib.symbolsPerOctet = 0;
+	if (channel >= RF230_MIN_CHANNEL && channel <= RF230_MAX_CHANNEL) {
+		rf230_set_channel(channel);
+		pib.currentChannel = rf230_get_channel();
+		if (pib.currentChannel != channel)
+			print_debug("Channel %u has not been correctly set! Transceiver channel is set to %u!", channel, pib.currentChannel);
+		return phy_SUCCESS;
+	} else
+		return phy_INVALID_PARAMETER;
 }
 
-int8_t radio_get_rssi_threshold()
+/**
+ * @brief Set the transmission power level
+ *
+ * @param power level to be set
+ *
+ * @return PHY state phy_SUCCESS or phy_INVALID_PARAMETER
+ */
+phy_state
+radio_set_tx_power_level(uint8_t power)
 {
-	return THRESHOLD;
+	if (power >= TX_PWR_MIN && power <= TX_PWR_MAX) {
+		rf230_set_txpower(power);
+		pib.transmitPower = rf230_get_txpower();
+		if (pib.transmitPower != power)
+			print_debug("Transmit Power %u has not been correctly set! Transceiver power is set to %u!", power, pib.transmitPower);
+		return phy_SUCCESS;
+	} else
+		return phy_INVALID_PARAMETER;
 }
 
-uint8_t radio_get_operating_channel()
-{
-	return pib.currentChannel;
-}
-
-enum phyState radio_set_operating_channel(uint8_t channel)
+/**
+ * @brief Set the CCA mode
+ *
+ * @param mode to be set
+ * @param thres for the cca modes
+ *
+ * @return PHY state phy_SUCCESS or phy_INVALID_PARAMETER
+ */
+phy_state
+radio_set_cca_mode(uint8_t mode, uint8_t thres)
 {
 	/* todo */
+	if (mode != 1) {
+		print_debug("Currently only CCA Mode 1 supported!");
+		return phy_INVALID_PARAMETER;
+	} else
+		return phy_SUCCESS;
+}
+
+/**
+ * @brief Set the TRX state
+ *
+ * @param state to be set
+ *
+ * @return PHY state phy_SUCCESS, phy_RX_ON, phy_TRX_OFF, or phy_TX_ON
+ */
+phy_state
+radio_set_trx_state(phy_state state)
+{
+	/* todo */
+	print_debug("Set TRX state currently unsupported!");
+//	radio_status_t avr_state = RX_ON;
+//	return radioStatusToPhyState(avr_state);
 	return phy_SUCCESS;
 }
 
-//uint8_t radio_get_channels_supported()
-//{
-//	return pib->phyChannelsSupported;
-//}
-
-uint8_t radio_get_tx_power_level()
+/**
+ * @brief Perform a Clear Channel Assessment
+ *
+ * @return PHY state phy_IDLE, phy_TRX_OFF, or phy_BUSY
+ */
+phy_state
+radio_perform_cca()
 {
-	return pib.transmitPower;
+	if (radio_get_trx_state()==phyStateToRadioState(phy_TRX_OFF))
+		return phy_TRX_OFF;
+	else if (!NETSTACK_RADIO.channel_clear())
+		return phy_BUSY;
+	else
+		return phy_IDLE;
 }
 
-enum phyState radio_set_tx_power_level(uint8_t power)
+/**
+ * @brief Perform an Energy Detection
+ *
+ * @param energyLevel to write the result into
+ *
+ * @return PHY state phy_SUCCESS, phy_TRX_OFF, or phy_TX_ON
+ */
+phy_state
+radio_perform_ed(uint8_t *energyLevel)
 {
-	/* todo */
+	/* todo  */
+	print_debug("Perform ED currently unsupported by radio driver!");
+	*energyLevel = 0xFF;
 	return phy_SUCCESS;
 }
 
-uint8_t radio_get_cca_mode()
+/**
+ * @brief Send data via the radio interface
+ *
+ * @param data to be send
+ *
+ * @return PHY state phy_SUCCESS, phy_RX_ON, phy_TRX_OFF or phy_BUSY_TX
+ */
+phy_state
+radio_send(uint8_t * data, uint8_t length)
 {
-	return pib.cCAMode;
-}
+//	print_debug("radio_send length %u:", length);
+//	const uint8_t *ptr = data;
+//	uint16_t i;
+//	for (i=0; i<length; i++ ) {
+//		printf("%X, ", *ptr++);
+//	}
 
-enum phyState radio_set_cca_mode(uint8_t mode, uint8_t thres)
-{
-	/* todo */
-	return phy_SUCCESS;
-}
+	packetbuf_copyfrom(data, length);
+	uint8_t result = NETSTACK_RADIO.send(packetbuf_hdrptr(), packetbuf_totlen());
+	packetbuf_clear();
 
-uint8_t radio_get_current_page()
-{
-	return pib.currentPage;
-}
-
-enum phyState radio_set_current_page(uint8_t page)
-{
-	/* todo */
-	return phy_READ_ONLY;
-}
-
-uint16_t radio_get_max_frame_duration()
-{
-	return pib.maxFrameDuration;
-}
-
-uint8_t radio_get_shr_duration()
-{
-	return pib.sHRDuration;
-}
-
-float radio_get_symbols_per_octet()
-{
-	return pib.symbolsPerOctet;
+	return radioRetValueToPhyState(result);
 }

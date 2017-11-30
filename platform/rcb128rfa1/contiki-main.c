@@ -12,7 +12,7 @@
 #define PRINTD(...) /* Don't do anything in release builds */
 #endif
 
-#define SENSTERMBOARD 0			// stdout on sensor terminal board (STB)
+#define SENSTERMBOARD 1			// stdout on sensor terminal board (STB)
 #define SLIP_INPUT_ENABLED 0	// slip input handler (only RS232_PORT_0)
 #define PCAP_INPUT_ENABLED 0	// pcap input handler (only RS232_PORT_0)
 #define PCAPNG_INPUT_ENABLED 1	// pcapng input handler (only RS232_PORT_0)
@@ -136,7 +136,7 @@ void init(void)
   linkaddr_t addr;
  
   //linkaddr_set_node_addr(&addr);
-  get_mac_from_eeprom(&addr);
+  //get_mac_from_eeprom(&addr);
 
   rf230_set_pan_addr(params_get_panid(),params_get_panaddr(),(uint8_t *)&addr.u8);
   rf230_set_channel(params_get_channel());

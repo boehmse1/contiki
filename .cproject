@@ -26,7 +26,7 @@
 							<option id="de.innot.avreclipse.toolchain.options.toolchain.size.347203371" name="Print Size" superClass="de.innot.avreclipse.toolchain.options.toolchain.size"/>
 							<option id="de.innot.avreclipse.toolchain.options.toolchain.avrdude.1652957544" name="AVRDude" superClass="de.innot.avreclipse.toolchain.options.toolchain.avrdude"/>
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="de.innot.avreclipse.targetplatform.avr.210673606" name="AVR Cross-Target" osList="all" superClass="de.innot.avreclipse.targetplatform.avr"/>
-							<builder arguments="${TARGET}" buildPath="${CONTIKI_BUILD_LOC}" command="make" id="de.innot.avreclipse.target.builder.winavr.base.41953389" incrementalBuildTarget="${CONTIKI_APP}" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="AVR GNU Make Builder" superClass="de.innot.avreclipse.target.builder.winavr.base">
+							<builder arguments="" buildPath="${CONTIKI_BUILD_LOC}" command="make" id="de.innot.avreclipse.target.builder.winavr.base.41953389" incrementalBuildTarget="" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="AVR GNU Make Builder" superClass="de.innot.avreclipse.target.builder.winavr.base">
 								<outputEntries>
 									<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="outputPath" name=""/>
 								</outputEntries>
