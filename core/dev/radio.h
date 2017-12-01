@@ -101,6 +101,21 @@ enum {
    */
   RADIO_PARAM_CHANNEL,
 
+  /*
+   * Parameters defined by the specification
+   */
+  RADIO_PARAM_CHANNELS_SUPPORTED,
+  RADIO_PARAM_CCA_MODE,
+  RADIO_PARAM_CURRENT_PAGE,
+  RADIO_PARAM_MAX_FRAME_DURATION,
+  RADIO_PARAM_SHR_DURATION,
+  RADIO_PARAM_SYMBOLS_PER_OCTET,
+
+  /*
+   * State of the transceiver according to the specification
+   */
+  RADIO_PARAM_PHY_STATE,
+
   /* Personal area network identifier, which is used by the address filter. */
   RADIO_PARAM_PAN_ID,
 
@@ -149,6 +164,9 @@ enum {
 
   /* Received signal strength indicator in dBm. */
   RADIO_PARAM_RSSI,
+
+  /* Received signal strength THRESHOLD. */
+  RADIO_PARAM_RSSI_THRESHOLD,
 
   /*
    * Long (64 bits) address for the radio, which is used by the address filter.
@@ -208,7 +226,8 @@ typedef enum {
   RADIO_RESULT_OK,
   RADIO_RESULT_NOT_SUPPORTED,
   RADIO_RESULT_INVALID_VALUE,
-  RADIO_RESULT_ERROR
+  RADIO_RESULT_ERROR,
+  RADIO_RESULT_READ_ONLY
 } radio_result_t;
 
 /* Radio return values for transmissions. */

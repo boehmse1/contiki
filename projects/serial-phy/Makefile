@@ -1,10 +1,10 @@
 CONTIKI = ../..
-#CONTIKI_PROJECT = transceiver
-CONTIKI_PROJECT = transceiver.elf
+CONTIKI_PROJECT = transceiver
+#CONTIKI_PROJECT = transceiver.elf
 all: $(CONTIKI_PROJECT)
 
-#TARGET=native
-TARGET=rcb128rfa1
+TARGET=native
+#TARGET=rcb128rfa1
 
 UIP_CONF_RPL=0
 UIP_CONF_IPV6=0
@@ -15,7 +15,7 @@ ifeq ($(TARGET),mbxxx)
 CFLAGS+= -DSNIFFER_FRAMES_HAVE_FCS
 endif
 
-PROJECT_SOURCEFILES+= transceiver-rdc.c atmega128rfa1.c phy_service.c
+PROJECT_SOURCEFILES+= transceiver-rdc.c serial-phy.c
 include $(CONTIKI)/Makefile.include
 
 sniff:

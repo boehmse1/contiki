@@ -1,4 +1,5 @@
-/*   Copyright (c) 2008, Swedish Institute of Computer Science
+/*  Copyright (c) 2008, Swedish Institute of Computer Science
+ *  Copyright (c) 2017 Sebastian Boehm (BTU-CS)
  *  All rights reserved.
  *
  *  Additional fixes for AVR contributed by:
@@ -52,6 +53,7 @@
 #ifndef RF230BB_H_
 #define RF230BB_H_
 /*============================ INCLUDE =======================================*/
+#include <serial-phy.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include "hal.h"
@@ -109,6 +111,45 @@
 #endif
 /*============================ TYPEDEFS ======================================*/
 
+/** @brief	Threshold for energy detection
+ *
+ * Note:	ATmega128RFA1 datasheet - Figure 9-18
+ * 			energy level resolution 0-83
+ * 			ED sensitivity -90dBm (steps are 1dBm PHY_ED_LEVEL)
+ */
+static const int8_t threshold = -90;
+
+/** @brief 	Tolerance of the output power level
+ *
+ * See ATmega128RFA1 datasheet - 35.14.3 Transmitter Characteristics
+ *
+ * Note:	Shifted to MSBs b7 .. b6 of a 8-bit value
+ */
+static const uint8_t txPowerTolerance = 64;
+
+/** @brief 	Tolerance of the output power level
+ *
+ * See ATmega128RFA1 datasheet - 35.14.3 Transmitter Characteristics
+ *
+ * Note:	Shifted to MSBs b7 .. b6 of a 8-bit value
+ */
+static const phyAttrChannelsSupported channelsSupported = 0xAABBCCDD;
+
+/** @brief	Channel page (according to 2,4GHz O-QPSK PHY) */
+static const phyAttrCurrentPage currentPage = 0;
+
+/** @brief	Maximum frame duration (according to 2,4GHz O-QPSK PHY) */
+static const phyAttrMaxFrameDuration maxFrameDuration = 266;
+
+/** @brief	Duration of the SHR (according to 2,4GHz O-QPSK PHY) */
+static const phyAttrSHRDuration sHRDuration = 10;
+
+/** @brief	Number of symbols per octet (according to 2,4GHz O-QPSK PHY) */
+static const phyAttrSymbolsPerOctet symbolsPerOctet = 2;
+
+/** @brief	CCA mode todo: static? */
+static const phyAttrCCAMode ccaMode = 3;
+
 /** \brief  This macro defines the start value for the RADIO_* status constants.
  *
  *          It was chosen to have this macro so that the user can define where
@@ -145,6 +186,81 @@ typedef enum{
     RADIO_NO_ACK,                     /**< No acknowledge frame was received. */
 }radio_status_t;
 
+/**
+ * @brief	Conversion between internal avr implementation and official
+ * 			specification phy enumeration
+ *
+ * According to Table 18—PHY enumerations description
+ *
+ * @param	state according to the avr implementation
+ *
+ * @return	phy_state according to the specification
+ */
+static inline const phy_state radioStatusToPhyState(radio_status_t state)
+{
+	switch (state)
+	{
+		case RADIO_SUCCESS:					return phy_SUCCESS;
+		case RADIO_UNSUPPORTED_DEVICE:		return -1;
+		case RADIO_INVALID_ARGUMENT:		return phy_INVALID_PARAMETER;
+		case RADIO_TIMED_OUT:				return -1;
+		case RADIO_WRONG_STATE:				return -1;
+		case RADIO_BUSY_STATE:				return -1;
+		case RADIO_STATE_TRANSITION_FAILED:	return -1;
+		case RADIO_CCA_IDLE:				return phy_IDLE;
+		case RADIO_CCA_BUSY:				return phy_BUSY;
+		case RADIO_TRX_BUSY:				return phy_BUSY_RX;	/** todo: or phy_BUSY_TX */ /**<  */
+		case RADIO_BAT_LOW:					return -1;
+		case RADIO_BAT_OK:					return -1;
+		case RADIO_CRC_FAILED:				return -1;
+		case RADIO_CHANNEL_ACCESS_FAILURE:	return -1;
+		case RADIO_NO_ACK:					return -1;
+		default:                        	return -1;
+	}
+}
+
+/**
+ * @brief	Conversion between internal avr implementation and official
+ * 			specification phy states.
+ * 			Only the "states" according to the avr implementation are mentioned.
+ *
+ * Because the specification does not make any assumptions about the operation
+ * modes or transceiver states of the radio module, we have to map here.
+ *
+ * According to rf230bb.c::radio_set_trx_state() following states are possible:
+ * 			RX_ON        Requested transition to RX_ON state.
+ * 			TRX_OFF      Requested transition to TRX_OFF state.
+ * 			PLL_ON       Requested transition to PLL_ON state.
+ * 			RX_AACK_ON   Requested transition to RX_AACK_ON state.
+ * 			TX_ARET_ON   Requested transition to TX_ARET_ON state.
+ *
+ * According to PLME-SET-TRX-STATE.request following states are possible:
+ * 			RX_ON
+ * 			TRX_OFF
+ * 			FORCE_TRX_OFF
+ * 			TX_ON
+ *
+ * @param	phy_state according to the specification
+ *
+ * @return	state according to the avr implementation
+ */
+static inline const uint8_t phyStateToRadioState(phy_state state)
+{
+	switch (state)
+	{
+//		case phy_BUSY_RX:           	return BUSY_RX;
+//		case phy_BUSY_TX:				return BUSY_TX;
+		case phy_RX_ON:					return RX_ON;
+		case phy_TRX_OFF:				return TRX_OFF;
+		case phy_FORCE_TRX_OFF:			return TRX_OFF;
+		case phy_TX_ON:					return PLL_ON;	/**< 9.4.1.2.3 PLL_ON – PLL State */
+		/** todo: 9.4.2.3 RX_AACK_ON – Receive with Automatic ACK (from extended operation mode) */
+		/** todo: 9.4.2.5 TX_ARET_ON – Transmit with Automatic Retry and CSMA-CA Retry (from extended operation mode) */
+		default:                        return -1;
+//		9.4.1.2.1 SLEEP – Sleep State
+//		9.4.1.2.6 RESET State
+	}
+}
 
 /**
  * \name Transaction status codes
@@ -200,6 +316,15 @@ typedef void (*radio_rx_callback) (uint16_t data);
 **	RF230BB_HOOK_RADIO_OFF()
 **	
 */
+
+/*========================= INLINE FUNCTIONS =================================*/
+
+/**
+ * @brief Get the RSSI threshold
+ *
+ * @return threshold value
+ */
+static inline const int8_t radio_get_rssi_threshold() { return threshold; }
 
 
 /*============================ PROTOTYPES ====================================*/

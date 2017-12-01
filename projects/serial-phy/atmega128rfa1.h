@@ -8,12 +8,12 @@
 #ifndef __ATMEGA128RFA1_H__
 #define __ATMEGA128RFA1_H__
 
+#include <serial-phy.h>
 #include <stdint.h>
 #include <stdio.h>
 
 #include "radio/rf230bb/rf230bb.h"
 #include "dev/radio.h"
-#include "phy_service.h"
 
 /** @brief	Threshold for energy detection
  *
@@ -62,7 +62,6 @@ static PhyPIB pib = (PhyPIB) {
 static phy_state state = phy_IDLE;
 
 /**
-<<<<<<< HEAD
  * @brief	Conversion between internal avr implementation and official
  * 			specification phy enumeration
  *
@@ -150,32 +149,6 @@ static inline const uint8_t phyStateToRadioState(phy_state state)
 		default:                        return -1;
 //		9.4.1.2.1 SLEEP – Sleep State
 //		9.4.1.2.6 RESET State
-	}
-}
-
-/**
- * @brief	Conversion between contiki's return value implementation and
- * 			official specification phy enumeration
- *
- * According to core/dev/radio.h
- *
- * @param	retValue according to contiki's radio driver (radio.h)
- *
- * @return	phy_state according to the specification
- */
-static inline const phy_state radioRetValueToPhyState(uint8_t retValue)
-{
-	switch (retValue)
-	{
-	/** @brief Transmission was successful. */
-	case RADIO_TX_OK:			return phy_SUCCESS;
-	/** @brief Transmission reported an error. */
-	case RADIO_TX_ERR:			return -1;
-	/** @brief Transmission reported a collision. */
-	case RADIO_TX_COLLISION:	return -1;
-	/** @brief Transmission reported no ack. */
-	case RADIO_TX_NOACK:		return -1;
-    default:                    return -1;
 	}
 }
 

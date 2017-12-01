@@ -254,29 +254,85 @@ static int rf230_cca(void);
 
 uint8_t rf230_last_correlation,rf230_last_rssi,rf230_smallest_rssi;
 
+uint8_t RF230_receive_on;
+static uint8_t channel;
+
 /*---------------------------------------------------------------------------*/
 static radio_result_t
 get_value(radio_param_t param, radio_value_t *value)
 {
-  return RADIO_RESULT_NOT_SUPPORTED;
+  switch (param) {
+	  case RADIO_PARAM_CHANNEL:
+		  *value = rf230_get_channel();
+		  return RADIO_RESULT_OK;
+	  case RADIO_PARAM_CCA_MODE:
+		  *value = ccaMode;
+		  return RADIO_RESULT_OK;
+	  case RADIO_PARAM_CURRENT_PAGE:
+		  *value = currentPage;
+		  return RADIO_RESULT_OK;
+	  case RADIO_PARAM_SHR_DURATION:
+		  *value = sHRDuration;
+		  return RADIO_RESULT_OK;
+	  case RADIO_PARAM_SYMBOLS_PER_OCTET:
+		  *value = symbolsPerOctet;
+		  return RADIO_RESULT_OK;
+	  case RADIO_PARAM_TXPOWER:
+		  *value = rf230_get_txpower();
+		  return RADIO_RESULT_OK;
+	  default:
+		  return RADIO_RESULT_NOT_SUPPORTED;
+  }
 }
 /*---------------------------------------------------------------------------*/
 static radio_result_t
 set_value(radio_param_t param, radio_value_t value)
 {
-  return RADIO_RESULT_NOT_SUPPORTED;
+	switch (param) {
+	  case RADIO_PARAM_CHANNEL:
+		  rf230_set_channel((uint8_t) value);
+		  return RADIO_RESULT_OK;
+	  case RADIO_PARAM_CCA_MODE:
+		  /* todo: */
+		  return RADIO_RESULT_READ_ONLY;
+	  case RADIO_PARAM_TXPOWER:
+		  rf230_set_txpower(value);
+		  return RADIO_RESULT_OK;
+	  case RADIO_PARAM_CURRENT_PAGE:
+	  case RADIO_PARAM_SHR_DURATION:
+	  case RADIO_PARAM_SYMBOLS_PER_OCTET:
+		  return RADIO_RESULT_READ_ONLY;
+	  default:
+		  return RADIO_RESULT_NOT_SUPPORTED;
+  }
 }
 /*---------------------------------------------------------------------------*/
 static radio_result_t
 get_object(radio_param_t param, void *dest, size_t size)
 {
-  return RADIO_RESULT_NOT_SUPPORTED;
+	switch (param) {
+		case RADIO_PARAM_CHANNELS_SUPPORTED:
+			*(uint32_t *)dest = channelsSupported;
+			return RADIO_RESULT_OK;
+		case RADIO_PARAM_MAX_FRAME_DURATION:
+			*(uint16_t *)dest = maxFrameDuration;
+			return RADIO_RESULT_OK;
+		default:
+			return RADIO_RESULT_NOT_SUPPORTED;
+	}
 }
 /*---------------------------------------------------------------------------*/
 static radio_result_t
 set_object(radio_param_t param, const void *src, size_t size)
 {
-  return RADIO_RESULT_NOT_SUPPORTED;
+	switch (param) {
+		case RADIO_PARAM_CHANNELS_SUPPORTED:
+			return RADIO_RESULT_READ_ONLY;
+		case RADIO_PARAM_MAX_FRAME_DURATION:
+			return RADIO_RESULT_READ_ONLY;
+		default:
+			return RADIO_RESULT_NOT_SUPPORTED;
+	}
 }
 /*---------------------------------------------------------------------------*/
 const struct radio_driver rf230_driver =
@@ -296,9 +352,6 @@ const struct radio_driver rf230_driver =
     get_object,
     set_object
   };
-
-uint8_t RF230_receive_on;
-static uint8_t channel;
 
 /* Received frames are buffered to rxframe in the interrupt routine in hal.c */
 uint8_t rxframe_head,rxframe_tail;
