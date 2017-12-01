@@ -12,7 +12,7 @@
 #include "net/packetbuf.h"
 #include "lib/ringbuf.h"
 
-#define DEBUG 0
+#define DEBUG 1
 #if defined(DEBUG) && DEBUG == 1
 #define print_debug(fmt, args...) printf("[Pcapng_Line]: " fmt "\n", ##args)
 #define PRINTD(...)

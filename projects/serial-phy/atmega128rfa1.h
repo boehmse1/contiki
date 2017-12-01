@@ -62,6 +62,7 @@ static PhyPIB pib = (PhyPIB) {
 static phy_state state = phy_IDLE;
 
 /**
+<<<<<<< HEAD
  * @brief	Conversion between internal avr implementation and official
  * 			specification phy enumeration
  *

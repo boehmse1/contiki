@@ -192,7 +192,7 @@ typedef uint16_t phyAttrMaxFrameDuration;		/**< read only value */
 /** @brief	The duration of the SHR (coming from the current PHY) */
 typedef uint8_t phyAttrSHRDuration;				/**< read only value */
 
-/** @brief	The number of symbols per octet (coming from the current PHY)
+/** @brief	The number of symbols per octed (coming from the current PHY)
  *
  * Note:	The possible float values 0.4, 1.6, 2.0, 8.0 represented as
  * 			unsigned 8-bit integer to save space:
