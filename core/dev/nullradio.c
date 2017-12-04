@@ -1,5 +1,7 @@
 #include "dev/nullradio.h"
 
+static uint8_t channel = 26;
+static int txpower = 3;
 
 /*---------------------------------------------------------------------------*/
 static int
@@ -66,25 +68,78 @@ off(void)
 static radio_result_t
 get_value(radio_param_t param, radio_value_t *value)
 {
-  return RADIO_RESULT_NOT_SUPPORTED;
+	switch (param) {
+		  case RADIO_PARAM_CHANNEL:
+			  *value = (int)channel;
+			  return RADIO_RESULT_OK;
+		  case RADIO_PARAM_CCA_MODE:
+			  *value = ccaMode;
+			  return RADIO_RESULT_OK;
+		  case RADIO_PARAM_CURRENT_PAGE:
+			  *value = currentPage;
+			  return RADIO_RESULT_OK;
+		  case RADIO_PARAM_SHR_DURATION:
+			  *value = sHRDuration;
+			  return RADIO_RESULT_OK;
+		  case RADIO_PARAM_SYMBOLS_PER_OCTET:
+			  *value = symbolsPerOctet;
+			  return RADIO_RESULT_OK;
+		  case RADIO_PARAM_TXPOWER:
+			  *value = txpower;
+			  return RADIO_RESULT_OK;
+		  default:
+			  return RADIO_RESULT_NOT_SUPPORTED;
+	  }
 }
 /*---------------------------------------------------------------------------*/
 static radio_result_t
 set_value(radio_param_t param, radio_value_t value)
 {
-  return RADIO_RESULT_NOT_SUPPORTED;
+	switch (param) {
+		  case RADIO_PARAM_CHANNEL:
+			  channel = (uint8_t) value;
+			  return RADIO_RESULT_OK;
+		  case RADIO_PARAM_CCA_MODE:
+			  /* todo: */
+			  return RADIO_RESULT_READ_ONLY;
+		  case RADIO_PARAM_TXPOWER:
+			  txpower = value;
+			  return RADIO_RESULT_OK;
+		  case RADIO_PARAM_CURRENT_PAGE:
+		  case RADIO_PARAM_SHR_DURATION:
+		  case RADIO_PARAM_SYMBOLS_PER_OCTET:
+			  return RADIO_RESULT_READ_ONLY;
+		  default:
+			  return RADIO_RESULT_NOT_SUPPORTED;
+	  }
 }
 /*---------------------------------------------------------------------------*/
 static radio_result_t
 get_object(radio_param_t param, void *dest, size_t size)
 {
-  return RADIO_RESULT_NOT_SUPPORTED;
+	switch (param) {
+			case RADIO_PARAM_CHANNELS_SUPPORTED:
+				*(uint32_t *)dest = channelsSupported;
+				return RADIO_RESULT_OK;
+			case RADIO_PARAM_MAX_FRAME_DURATION:
+				*(uint16_t *)dest = maxFrameDuration;
+				return RADIO_RESULT_OK;
+			default:
+				return RADIO_RESULT_NOT_SUPPORTED;
+		}
 }
 /*---------------------------------------------------------------------------*/
 static radio_result_t
 set_object(radio_param_t param, const void *src, size_t size)
 {
-  return RADIO_RESULT_NOT_SUPPORTED;
+	switch (param) {
+			case RADIO_PARAM_CHANNELS_SUPPORTED:
+				return RADIO_RESULT_READ_ONLY;
+			case RADIO_PARAM_MAX_FRAME_DURATION:
+				return RADIO_RESULT_READ_ONLY;
+			default:
+				return RADIO_RESULT_NOT_SUPPORTED;
+		}
 }
 /*---------------------------------------------------------------------------*/
 const struct radio_driver nullradio_driver =
