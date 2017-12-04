@@ -246,9 +246,9 @@ pcapng_line_input_byte(unsigned char c)
 /*---------------------------------------------------------------------------*/
 PROCESS_THREAD(pcapng_line_process, ev, data)
 {
-  static uint8_t buf[BUFSIZE];
+  static uint8_t buf[BUFSIZE*2];
   static pcapng_block_header_s header;
-  static int ptr;
+  static uint16_t ptr;
   static int c;
 
   PROCESS_BEGIN();
@@ -261,6 +261,7 @@ PROCESS_THREAD(pcapng_line_process, ev, data)
   while (1) {
 	  /* get character from buffer */
 	  c = ringbuf_get(&rxbuf);
+	  PRINTD("PCAPNG_RECEIVED_CHARACTER %i on pos %i\n", c, ptr);
 
 	  /* if buffer is empty */
 	  if (c == -1) {
@@ -274,7 +275,6 @@ PROCESS_THREAD(pcapng_line_process, ev, data)
 		  case PCAPNG_IDLE:
 			  /* read bytes of a pcapng block into buffer */
 			  if (ptr < BUFSIZE-1) {
-				  PRINTD("PCAPNG_RECEIVED_CHARACTER %i\n", c);
 				  buf[ptr++] = (uint8_t) c;
 			  }
 			  /* read block type and length */
@@ -303,7 +303,7 @@ PROCESS_THREAD(pcapng_line_process, ev, data)
 
 		  case PCAPNG_READ_BLOCK:
 			  /* just read the whole pcapng block into buffer */
-			  if (ptr < BUFSIZE-1 && ptr < header.block_total_length) {
+			  if (ptr < header.block_total_length) {
 				  buf[ptr++] = (uint8_t) c;
 			  }
 			  /* last byte of block */

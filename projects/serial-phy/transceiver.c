@@ -69,45 +69,58 @@ void get_attribute(phy_pib_attr attr)
 	PHY_msg conf;
 	conf.type = PLME_GET_CONFIRM;
 	conf.x.get_conf.attribute = attr;
+	radio_value_t get_value;
 
 	switch (attr) {
 	case phyCurrentChannel:
-		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_CHANNEL, &*(radio_value_t *)(intptr_t)conf.x.get_conf.value.currentChannel));
+		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_CHANNEL, &get_value));
+		conf.x.get_conf.value.currentChannel = get_value;
+//		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_CHANNEL, &*(radio_value_t *)(intptr_t)conf.x.get_conf.value.currentChannel));
 //		conf.x.get_conf.value.currentChannel = radio_get_operating_channel();
 		conf.length = SIZEOF_PLME_GET_CONFIRM + sizeof(phyAttrCurrentChannel);
 		break;
 	case phyChannelsSupported:
-		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_object(RADIO_PARAM_CHANNELS_SUPPORTED, &*(radio_value_t *)(intptr_t)conf.x.get_conf.value.channelsSupported, sizeof(phyAttrChannelsSupported)));
-//		conf.x.get_conf.value.channelsSupported = radio_get_channels_supported();
+		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_object(RADIO_PARAM_CHANNELS_SUPPORTED, &conf.x.get_conf.value.channelsSupported, sizeof(phyAttrChannelsSupported)));
 		conf.length = SIZEOF_PLME_GET_CONFIRM + sizeof(phyAttrChannelsSupported);
 		break;
 	case phyTransmitPower:
-		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_TXPOWER, &*(radio_value_t *)(intptr_t)conf.x.get_conf.value.transmitPower));
+		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_TXPOWER, &get_value));
+		conf.x.get_conf.value.transmitPower = get_value;
+//		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_TXPOWER, &*(radio_value_t *)(intptr_t)conf.x.get_conf.value.transmitPower));
 //		conf.x.get_conf.value.transmitPower = radio_get_tx_power_level();
 		conf.length = SIZEOF_PLME_GET_CONFIRM + sizeof(phyAttrTransmitPower);
 		break;
 	case phyCCAMode:
-		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_CCA_MODE, &*(radio_value_t *)(intptr_t)conf.x.get_conf.value.cCAMode));
+		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_CCA_MODE, &get_value));
+		conf.x.get_conf.value.cCAMode = get_value;
+//		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_CCA_MODE, &*(radio_value_t *)(intptr_t)conf.x.get_conf.value.cCAMode));
 //		conf.x.get_conf.value.cCAMode = radio_get_cca_mode();
 		conf.length = SIZEOF_PLME_GET_CONFIRM + sizeof(phyAttrCCAMode);
 		break;
 	case phyCurrentPage:
-		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_CURRENT_PAGE, &*(radio_value_t *)(intptr_t)conf.x.get_conf.value.currentPage));
+		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_CURRENT_PAGE, &get_value));
+		conf.x.get_conf.value.currentPage = get_value;
+//		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_CURRENT_PAGE, &*(radio_value_t *)(intptr_t)conf.x.get_conf.value.currentPage));
 //		conf.x.get_conf.value.currentPage = radio_get_current_page();
 		conf.length = SIZEOF_PLME_GET_CONFIRM + sizeof(phyAttrCurrentPage);
 		break;
-	case phyMaxFrameDuration:
-		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_MAX_FRAME_DURATION, &*(radio_value_t *)(intptr_t)conf.x.get_conf.value.maxFrameDuration));
+	case phyMaxFrameDuration: {
+		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_object(RADIO_PARAM_MAX_FRAME_DURATION, &conf.x.get_conf.value.maxFrameDuration, sizeof(phyAttrMaxFrameDuration)));
 //		conf.x.get_conf.value.maxFrameDuration = radio_get_max_frame_duration();
 		conf.length = SIZEOF_PLME_GET_CONFIRM + sizeof(phyAttrMaxFrameDuration);
 		break;
+	}
 	case phySHRDuration:
-		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_SHR_DURATION, &*(radio_value_t *)(intptr_t)conf.x.get_conf.value.sHRDuration));
+		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_SHR_DURATION, &get_value));
+		conf.x.get_conf.value.sHRDuration = get_value;
+//		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_SHR_DURATION, &*(radio_value_t *)(intptr_t)conf.x.get_conf.value.sHRDuration));
 //		conf.x.get_conf.value.sHRDuration = radio_get_shr_duration();
 		conf.length = SIZEOF_PLME_GET_CONFIRM + sizeof(phyAttrSHRDuration);
 		break;
 	case phySymbolsPerOctet:
-		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_SYMBOLS_PER_OCTET, &*(radio_value_t *)(intptr_t)conf.x.get_conf.value.symbolsPerOctet));
+		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_SYMBOLS_PER_OCTET, &get_value));
+		conf.x.get_conf.value.symbolsPerOctet = get_value;
+//		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_SYMBOLS_PER_OCTET, &*(radio_value_t *)(intptr_t)conf.x.get_conf.value.symbolsPerOctet));
 //		conf.x.get_conf.value.symbolsPerOctet = radio_get_symbols_per_octet();
 		conf.length = SIZEOF_PLME_GET_CONFIRM + sizeof(phyAttrSymbolsPerOctet);
 		break;
@@ -215,14 +228,15 @@ void handleMessage(PHY_msg * msg)
 		conf.type = PD_DATA_CONFIRM;
 		conf.length = SIZEOF_PD_DATA_CONFIRM;
 		//conf.x.data_conf.status = radio_send((uint8_t *)&msg->x.data_req.data, msg->x.data_req.psduLength);
-		conf.x.data_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.send((uint8_t *)&msg->x.data_req.data, msg->x.data_req.psduLength));
+		/* todo: disable CRC adding by the radio driver, no radio return value on ERROR specified! */
+		conf.x.data_conf.status = radioRetValueTXToPhyState(NETSTACK_RADIO.send((uint8_t *)&msg->x.data_req.data, msg->x.data_req.psduLength));
 		send_msg(&conf);
 		break;
 	case PLME_CCA_REQUEST:
 		conf.type = PLME_CCA_CONFIRM;
 		conf.length = SIZEOF_PLME_CCA_CONFIRM;
 		//conf.x.cca_conf.status = radio_perform_cca();
-		/* todo: radio chip my not report RADIO_RESULT_X ... */
+		/* todo: radio chip may not report RADIO_RESULT_X ... */
 		conf.x.cca_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.channel_clear());
 		send_msg(&conf);
 		break;

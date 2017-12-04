@@ -331,7 +331,7 @@ print_pib_value(phy_pib_attr attr, PhyPIB_value value)
 		print_debug("value = %u\n", value.currentChannel);
 		break;
 	case phyChannelsSupported:
-		print_debug("value = %u\n", value.channelsSupported);
+		print_debug("value = %" PRIu32 "\n", value.channelsSupported);
 		break;
 	case phyTransmitPower:
 		print_debug("value = %u\n", value.transmitPower);
@@ -343,7 +343,7 @@ print_pib_value(phy_pib_attr attr, PhyPIB_value value)
 		print_debug("value = %u\n", value.currentPage);
 		break;
 	case phyMaxFrameDuration:
-		print_debug("value = %u\n", value.maxFrameDuration);
+		print_debug("value = %" PRIu16 "\n", value.maxFrameDuration);
 		break;
 	case phySHRDuration:
 		print_debug("value = %u\n", value.sHRDuration);
