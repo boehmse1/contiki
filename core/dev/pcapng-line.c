@@ -135,8 +135,16 @@ pcapng_line_write_epb(uint32_t interface, pcap_timeval_s *ts, const void * data,
 	pcapng_block_header_s bh;
 	pcapng_enhanced_packet_block_s epb;
 
-	uint8_t pad_len = 4 - (length%4);	/* length of padding */
+	/* padding */
+	uint8_t pad_len;
 	uint8_t pad[] = {0,0,0,0};
+
+	/* set length of padding bytes */
+	if (length%4) {
+	  pad_len = 4 - (length%4);
+	} else {
+	  pad_len = 0;
+	}
 
 	/* write block header */
 	bh.block_type 			= PCAPNG_BLOCK_TYPE_EPB;
@@ -249,6 +257,7 @@ PROCESS_THREAD(pcapng_line_process, ev, data)
   static uint8_t buf[BUFSIZE*2];
   static pcapng_block_header_s header;
   static uint16_t ptr;
+  static uint8_t pad_len;
   static int c;
 
   PROCESS_BEGIN();
@@ -292,6 +301,14 @@ PROCESS_THREAD(pcapng_line_process, ev, data)
 				  if (pcapngBlockTypeValid(header.block_type)) {
 					  /* read the pcapng block */
 					  state = PCAPNG_READ_BLOCK;
+					  /* set length of padding bytes */
+					  if (header.block_total_length%4) {
+						  pad_len = 4 - (header.block_total_length%4);
+					  } else {
+						  pad_len = 0;
+					  }
+
+					  PRINTD("pad_len = %u", pad_len);
 				  } else {
 					  /* reset the packet header and pointer */
 					  header.block_type = 0;
@@ -303,11 +320,11 @@ PROCESS_THREAD(pcapng_line_process, ev, data)
 
 		  case PCAPNG_READ_BLOCK:
 			  /* just read the whole pcapng block into buffer */
-			  if (ptr < header.block_total_length) {
+			  if (ptr < (header.block_total_length + pad_len)) {
 				  buf[ptr++] = (uint8_t) c;
 			  }
 			  /* last byte of block */
-			  if (ptr == header.block_total_length) {
+			  if (ptr == (header.block_total_length + pad_len)) {
 				  /* broadcast event by type */
 				  switch (header.block_type) {
 
