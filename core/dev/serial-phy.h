@@ -84,7 +84,7 @@ typedef struct pd_data_conf
 typedef struct pd_data_ind
 {
 	uint8_t psduLength;       			/**< encapsulated payload length*/
-	uint8_t ppduLinkQuality;  			/**< link quality of the PPDU */
+	int8_t ppduLinkQuality;  			/**< link quality of the PPDU */
 	uint8_t data[aMaxPHYPacketSize];	/**< payload byte sequence */
 } pd_data_ind;
 

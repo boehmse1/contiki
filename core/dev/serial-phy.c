@@ -374,7 +374,7 @@ print_msg(PHY_msg * msg, char *info)
 		break;
 	case PD_DATA_INDICATION:
 		print_debug("psduLength = %u\n", msg->x.data_ind.psduLength);
-		print_debug("ppduLinkQuality = %u\n", msg->x.data_ind.ppduLinkQuality);
+		print_debug("ppduLinkQuality = %i\n", msg->x.data_ind.ppduLinkQuality);
 		print_msg_payload(&msg->x.data_ind.data, msg->x.data_ind.psduLength, "data");
 		break;
 	case PLME_CCA_CONFIRM:

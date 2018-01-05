@@ -43,6 +43,8 @@ void initialize()
 {
 	print_debug("initialize");
 
+	packetbuf_clear();
+
 	/* status led */
 	//leds_on(1);
 
@@ -127,20 +129,19 @@ void set_attribute(phy_pib_attr attr, PhyPIB_value *value)
 
 	switch (attr) {
 	case phyCurrentChannel:
-		//conf.x.set_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.set_value(RADIO_PARAM_CHANNEL, *(uint8_t *)value));
 		conf.x.set_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.set_value(RADIO_PARAM_CHANNEL, value->currentChannel));
 		break;
 	case phyChannelsSupported:
 		conf.x.set_conf.status = phy_READ_ONLY;	// read-only according to the specification
 		break;
 	case phyTransmitPower:
-		conf.x.set_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.set_value(RADIO_PARAM_TXPOWER, *(uint8_t *)value));
+		conf.x.set_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.set_value(RADIO_PARAM_TXPOWER, value->transmitPower));
 		break;
 	case phyCCAMode:
-		conf.x.set_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.set_value(RADIO_PARAM_CCA_MODE, *(uint8_t *)value));
+		conf.x.set_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.set_value(RADIO_PARAM_CCA_MODE, value->cCAMode));
 		break;
 	case phyCurrentPage:
-		conf.x.set_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.set_value(RADIO_PARAM_CURRENT_PAGE, *(uint8_t *)value));
+		conf.x.set_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.set_value(RADIO_PARAM_CURRENT_PAGE, value->currentPage));
 		break;
 	case phyMaxFrameDuration:
 		conf.x.set_conf.status = phy_READ_ONLY;	// read-only according to the specification
@@ -166,23 +167,23 @@ void receive()
 {
 	print_debug("packet received");
 
-	static uint16_t length;
+	static uint8_t length;
 	static uint8_t buffer[PACKETBUF_SIZE + PACKETBUF_HDR_SIZE];
-	static int8_t rssi;
+	static radio_value_t threshold;
 
 	/* copy frame to buffer */
 	length = packetbuf_copyto(buffer);
 
 	/* rssi threshold from radio chip */
-	NETSTACK_RADIO.get_value(RADIO_PARAM_RSSI_THRESHOLD, (radio_value_t *)&rssi);
-	rssi += packetbuf_attr(PACKETBUF_ATTR_RSSI);
+	NETSTACK_RADIO.get_value(RADIO_PARAM_RSSI_THRESHOLD, &threshold);
 
 	/* create phy service primitive */
 	PHY_msg ind;
 	ind.type = PD_DATA_INDICATION;
 	ind.length = SIZEOF_PD_DATA_INDICATION + length;
 	ind.x.data_ind.psduLength = length;
-	ind.x.data_ind.ppduLinkQuality = rssi;
+	ind.x.data_ind.ppduLinkQuality = (uint8_t)(threshold + packetbuf_attr(PACKETBUF_ATTR_RSSI));
+	//ind.x.data_ind.ppduLinkQuality = (uint8_t)packetbuf_attr(PACKETBUF_ATTR_LINK_QUALITY);
 	memcpy(&ind.x.data_ind.data, &buffer, length);
 
 	/* send indication */
