@@ -24,6 +24,8 @@
 *.c128
 *.c64
 *.cc2538dk
+*.rcb128rfa1
+*.waveshare-cc2530
 *.remote
 *.srf06-cc26xx
 *.ev-aducrf101mkxz
