@@ -109,7 +109,7 @@ deserialize_msg(uint8_t *stream, PHY_msg *msg)
 		msg->x.set_req.attribute = *data++;
 		switch (msg->x.set_req.attribute) {
 		case phyCurrentChannel:
-			msg->x.get_conf.value.currentChannel = *data++;
+			msg->x.set_req.value.currentChannel = *data++;
 			break;
 		case phyChannelsSupported:
 			msg->x.set_req.value.channelsSupported |= (uint32_t) *data++;
@@ -240,7 +240,7 @@ serialize_msg(PHY_msg * msg, uint8_t buffer[aMaxPHYPacketSize])
 		buffer[pos++] = msg->x.set_req.attribute;
 		switch (msg->x.set_req.attribute) {
 		case phyCurrentChannel:
-			buffer[pos++] = msg->x.get_conf.value.currentChannel;
+			buffer[pos++] = msg->x.set_req.value.currentChannel;
 			break;
 		case phyChannelsSupported:
 			buffer[pos++] = (uint8_t) msg->x.set_req.value.channelsSupported;
