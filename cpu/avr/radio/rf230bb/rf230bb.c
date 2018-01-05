@@ -280,6 +280,9 @@ get_value(radio_param_t param, radio_value_t *value)
 	  case RADIO_PARAM_TXPOWER:
 		  *value = rf230_get_txpower();
 		  return RADIO_RESULT_OK;
+	  case RADIO_PARAM_RSSI_THRESHOLD:
+		  *value = threshold;
+		  return RADIO_RESULT_OK;
 	  default:
 		  return RADIO_RESULT_NOT_SUPPORTED;
   }
@@ -299,9 +302,15 @@ set_value(radio_param_t param, radio_value_t value)
 		  rf230_set_txpower(value);
 		  return RADIO_RESULT_OK;
 	  case RADIO_PARAM_CURRENT_PAGE:
+		  return RADIO_RESULT_READ_ONLY;
 	  case RADIO_PARAM_SHR_DURATION:
+		  return RADIO_RESULT_READ_ONLY;
 	  case RADIO_PARAM_SYMBOLS_PER_OCTET:
 		  return RADIO_RESULT_READ_ONLY;
+	  case RADIO_PARAM_PHY_STATE:
+		  PRINTF("rf230: setting phy state not supported by radio driver");
+		  //radio_set_trx_state((uint8_t) value);
+		  return RADIO_RESULT_NOT_SUPPORTED;
 	  default:
 		  return RADIO_RESULT_NOT_SUPPORTED;
   }

@@ -69,14 +69,10 @@ void get_attribute(phy_pib_attr attr)
 	PHY_msg conf;
 	conf.type = PLME_GET_CONFIRM;
 	conf.x.get_conf.attribute = attr;
-	radio_value_t get_value;
 
 	switch (attr) {
 	case phyCurrentChannel:
-		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_CHANNEL, &get_value));
-		conf.x.get_conf.value.currentChannel = get_value;
-//		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_CHANNEL, &*(radio_value_t *)(intptr_t)conf.x.get_conf.value.currentChannel));
-//		conf.x.get_conf.value.currentChannel = radio_get_operating_channel();
+		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_CHANNEL, (radio_value_t *)&conf.x.get_conf.value.currentChannel));
 		conf.length = SIZEOF_PLME_GET_CONFIRM + sizeof(phyAttrCurrentChannel);
 		break;
 	case phyChannelsSupported:
@@ -84,44 +80,28 @@ void get_attribute(phy_pib_attr attr)
 		conf.length = SIZEOF_PLME_GET_CONFIRM + sizeof(phyAttrChannelsSupported);
 		break;
 	case phyTransmitPower:
-		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_TXPOWER, &get_value));
-		conf.x.get_conf.value.transmitPower = get_value;
-//		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_TXPOWER, &*(radio_value_t *)(intptr_t)conf.x.get_conf.value.transmitPower));
-//		conf.x.get_conf.value.transmitPower = radio_get_tx_power_level();
+		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_TXPOWER, (radio_value_t *)&conf.x.get_conf.value.transmitPower));
 		conf.length = SIZEOF_PLME_GET_CONFIRM + sizeof(phyAttrTransmitPower);
 		break;
 	case phyCCAMode:
-		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_CCA_MODE, &get_value));
-		conf.x.get_conf.value.cCAMode = get_value;
-//		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_CCA_MODE, &*(radio_value_t *)(intptr_t)conf.x.get_conf.value.cCAMode));
-//		conf.x.get_conf.value.cCAMode = radio_get_cca_mode();
+		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_CCA_MODE, (radio_value_t *)&conf.x.get_conf.value.cCAMode));
 		conf.length = SIZEOF_PLME_GET_CONFIRM + sizeof(phyAttrCCAMode);
 		break;
 	case phyCurrentPage:
-		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_CURRENT_PAGE, &get_value));
-		conf.x.get_conf.value.currentPage = get_value;
-//		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_CURRENT_PAGE, &*(radio_value_t *)(intptr_t)conf.x.get_conf.value.currentPage));
-//		conf.x.get_conf.value.currentPage = radio_get_current_page();
+		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_CURRENT_PAGE, (radio_value_t *)&conf.x.get_conf.value.currentPage));
 		conf.length = SIZEOF_PLME_GET_CONFIRM + sizeof(phyAttrCurrentPage);
 		break;
 	case phyMaxFrameDuration: {
 		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_object(RADIO_PARAM_MAX_FRAME_DURATION, &conf.x.get_conf.value.maxFrameDuration, sizeof(phyAttrMaxFrameDuration)));
-//		conf.x.get_conf.value.maxFrameDuration = radio_get_max_frame_duration();
 		conf.length = SIZEOF_PLME_GET_CONFIRM + sizeof(phyAttrMaxFrameDuration);
 		break;
 	}
 	case phySHRDuration:
-		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_SHR_DURATION, &get_value));
-		conf.x.get_conf.value.sHRDuration = get_value;
-//		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_SHR_DURATION, &*(radio_value_t *)(intptr_t)conf.x.get_conf.value.sHRDuration));
-//		conf.x.get_conf.value.sHRDuration = radio_get_shr_duration();
+		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_SHR_DURATION, (radio_value_t *)&conf.x.get_conf.value.sHRDuration));
 		conf.length = SIZEOF_PLME_GET_CONFIRM + sizeof(phyAttrSHRDuration);
 		break;
 	case phySymbolsPerOctet:
-		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_SYMBOLS_PER_OCTET, &get_value));
-		conf.x.get_conf.value.symbolsPerOctet = get_value;
-//		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_SYMBOLS_PER_OCTET, &*(radio_value_t *)(intptr_t)conf.x.get_conf.value.symbolsPerOctet));
-//		conf.x.get_conf.value.symbolsPerOctet = radio_get_symbols_per_octet();
+		conf.x.get_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.get_value(RADIO_PARAM_SYMBOLS_PER_OCTET, (radio_value_t *)&conf.x.get_conf.value.symbolsPerOctet));
 		conf.length = SIZEOF_PLME_GET_CONFIRM + sizeof(phyAttrSymbolsPerOctet);
 		break;
 	default:
@@ -138,29 +118,29 @@ void get_attribute(phy_pib_attr attr)
  * @param attr to be set
  * @param value address for the result
  */
-void set_attribute(phy_pib_attr attr, void *value)
+void set_attribute(phy_pib_attr attr, PhyPIB_value *value)
 {
 	PHY_msg conf;
 	conf.type = PLME_SET_CONFIRM;
 	conf.length = SIZEOF_PLME_SET_CONFIRM;
-	conf.x.set_conf.status = phy_SUCCESS; // phy_SUCCESS, phy_READ_ONLY, phy_UNSUPPORTED_ATTRIBUTE, INVALID_INDEX or phy_INVALID_PARAMETER
 	conf.x.set_conf.attribute = attr;
 
 	switch (attr) {
 	case phyCurrentChannel:
-		conf.x.set_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.set_value(RADIO_PARAM_CHANNEL, *(uint8_t *)value));
-//		conf.x.set_conf.status = radio_set_operating_channel(*((uint8_t *)value));
+		//conf.x.set_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.set_value(RADIO_PARAM_CHANNEL, *(uint8_t *)value));
+		conf.x.set_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.set_value(RADIO_PARAM_CHANNEL, value->currentChannel));
 		break;
 	case phyChannelsSupported:
 		conf.x.set_conf.status = phy_READ_ONLY;	// read-only according to the specification
 		break;
 	case phyTransmitPower:
-//		conf.x.set_conf.status = radio_set_tx_power_level(*((uint8_t *)value));
+		conf.x.set_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.set_value(RADIO_PARAM_TXPOWER, *(uint8_t *)value));
 		break;
 	case phyCCAMode:
-//		conf.x.set_conf.status = radio_set_cca_mode(*((uint8_t *)value), *((uint8_t *)value+1));
+		conf.x.set_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.set_value(RADIO_PARAM_CCA_MODE, *(uint8_t *)value));
 		break;
 	case phyCurrentPage:
+		conf.x.set_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.set_value(RADIO_PARAM_CURRENT_PAGE, *(uint8_t *)value));
 		break;
 	case phyMaxFrameDuration:
 		conf.x.set_conf.status = phy_READ_ONLY;	// read-only according to the specification
@@ -188,21 +168,21 @@ void receive()
 
 	static uint16_t length;
 	static uint8_t buffer[PACKETBUF_SIZE + PACKETBUF_HDR_SIZE];
+	static int8_t rssi;
 
 	/* copy frame to buffer */
 	length = packetbuf_copyto(buffer);
 
 	/* rssi threshold from radio chip */
-	static int8_t rssiThreshold;
-	NETSTACK_RADIO.get_value(RADIO_PARAM_RSSI_THRESHOLD, &*(radio_value_t *)(intptr_t)rssiThreshold);
-	rssiThreshold += packetbuf_attr(PACKETBUF_ATTR_RSSI);
+	NETSTACK_RADIO.get_value(RADIO_PARAM_RSSI_THRESHOLD, (radio_value_t *)&rssi);
+	rssi += packetbuf_attr(PACKETBUF_ATTR_RSSI);
 
 	/* create phy service primitive */
 	PHY_msg ind;
 	ind.type = PD_DATA_INDICATION;
 	ind.length = SIZEOF_PD_DATA_INDICATION + length;
 	ind.x.data_ind.psduLength = length;
-	ind.x.data_ind.ppduLinkQuality = rssiThreshold;
+	ind.x.data_ind.ppduLinkQuality = rssi;
 	memcpy(&ind.x.data_ind.data, &buffer, length);
 
 	/* send indication */
@@ -227,7 +207,6 @@ void handleMessage(PHY_msg * msg)
 	case PD_DATA_REQUEST:
 		conf.type = PD_DATA_CONFIRM;
 		conf.length = SIZEOF_PD_DATA_CONFIRM;
-		//conf.x.data_conf.status = radio_send((uint8_t *)&msg->x.data_req.data, msg->x.data_req.psduLength);
 		/* todo: disable CRC adding by the radio driver, no radio return value on ERROR specified! */
 		conf.x.data_conf.status = radioRetValueTXToPhyState(NETSTACK_RADIO.send((uint8_t *)&msg->x.data_req.data, msg->x.data_req.psduLength));
 		send_msg(&conf);
@@ -235,8 +214,8 @@ void handleMessage(PHY_msg * msg)
 	case PLME_CCA_REQUEST:
 		conf.type = PLME_CCA_CONFIRM;
 		conf.length = SIZEOF_PLME_CCA_CONFIRM;
-		//conf.x.cca_conf.status = radio_perform_cca();
-		/* todo: radio chip may not report RADIO_RESULT_X ... */
+		/* todo  */
+		// return values TRX_OFF, BUSY, or IDLE
 		conf.x.cca_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.channel_clear());
 		send_msg(&conf);
 		break;
@@ -244,9 +223,8 @@ void handleMessage(PHY_msg * msg)
 		conf.type = PLME_ED_CONFIRM;
 		conf.length = SIZEOF_PLME_ED_CONFIRM;
 		/* todo  */
-		print_debug("Perform ED currently unsupported by radio driver!");
-		//conf.x.ed_conf.status = radio_perform_ed(&conf.x.ed_conf.energyLevel);
 		//conf.x.ed_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.energy_detect(&conf.x.ed_conf.energyLevel));
+		print_debug("Perform ED currently unsupported by radio driver!");
 		conf.x.ed_conf.status = -1;
 		send_msg(&conf);
 		break;
@@ -256,7 +234,8 @@ void handleMessage(PHY_msg * msg)
 	case PLME_SET_TRX_STATE_REQUEST:
 		conf.type = PLME_SET_TRX_STATE_CONFIRM;
 		conf.length = SIZEOF_PLME_SET_TRX_STATE_CONFIRM;
-		//conf.x.set_trx_state_conf.status = radio_set_trx_state(msg->x.set_trx_state_req.status);
+		/* todo  */
+		print_debug("Set TRX state currently unsupported by radio driver!");
 		conf.x.set_trx_state_conf.status = radioRetValueToPhyState(NETSTACK_RADIO.set_value(RADIO_PARAM_PHY_STATE, msg->x.set_trx_state_req.status));
 		send_msg(&conf);
 		break;
@@ -299,14 +278,6 @@ PROCESS_THREAD(transceiver_init, ev, data)
 //			interface.linktype,
 //			interface.snaplen
 //	);
-
-//	radio_value_t channel, txpower;
-//	NETSTACK_RADIO.get_value(RADIO_PARAM_CHANNEL, &channel);
-//	NETSTACK_RADIO.get_value(RADIO_PARAM_TXPOWER, &txpower);
-	//NETSTACK_RADIO.get_value(RADIO_PARAM_TX_MODE);
-
-//	printf("Test channel: %i\n", channel);
-//	printf("Test txpower: %i\n", txpower);
 
 	/* wait for packet input */
 	while (1) {
