@@ -22,7 +22,7 @@ typedef enum msg_type_sap
     PLME_CCA_CONFIRM,
     PLME_ED_REQUEST,
     PLME_ED_CONFIRM,
-    PLME_GET_REQEST,
+    PLME_GET_REQUEST,
     PLME_GET_CONFIRM,
     PLME_SET_TRX_STATE_REQUEST,
     PLME_SET_TRX_STATE_CONFIRM,
@@ -44,7 +44,7 @@ inline static const char* msgTypeToString(msg_type_sap x)
         case PLME_CCA_CONFIRM:              return "PLME_CCA_CONFIRM";
         case PLME_ED_REQUEST:               return "PLME_ED_REQUEST";
         case PLME_ED_CONFIRM:               return "PLME_ED_CONFIRM";
-        case PLME_GET_REQEST:               return "PLME_GET_REQEST";
+        case PLME_GET_REQUEST:              return "PLME_GET_REQUEST";
         case PLME_GET_CONFIRM:              return "PLME_GET_CONFIRM";
         case PLME_SET_TRX_STATE_REQUEST:    return "PLME_SET_TRX_STATE_REQUEST";
         case PLME_SET_TRX_STATE_CONFIRM:    return "PLME_SET_TRX_STATE_CONFIRM";
