@@ -60,7 +60,7 @@ deserialize_msg(uint8_t *stream, PHY_msg *msg)
 		msg->x.ed_conf.status = *data++;
 		msg->x.ed_conf.energyLevel = *data++;
 		break;
-	case PLME_GET_REQEST:
+	case PLME_GET_REQUEST:
 		msg->x.get_req.attribute = *data++;
 		break;
 	case PLME_GET_CONFIRM:
@@ -191,7 +191,7 @@ serialize_msg(PHY_msg * msg, uint8_t buffer[aMaxPHYPacketSize])
 		buffer[pos++] = msg->x.ed_conf.status;
 		buffer[pos++] = msg->x.ed_conf.energyLevel;
 		break;
-	case PLME_GET_REQEST:
+	case PLME_GET_REQUEST:
 		buffer[pos++] = msg->x.get_req.attribute;
 		break;
 	case PLME_GET_CONFIRM:
@@ -301,7 +301,7 @@ void send_msg(PHY_msg * msg)
 	timestamp.ts_sec = (time - (time % CLOCK_SECOND)) / CLOCK_SECOND;
 	timestamp.ts_usec = 1000000 * (time % CLOCK_SECOND) / CLOCK_SECOND;
 
-	pcapng_line_write_epb(1, &timestamp, &buffer, msg->length);
+	pcapng_line_write_epb(0, &timestamp, &buffer, msg->length);
 
 	print_msg(msg, "to send");
 }
@@ -384,7 +384,7 @@ print_msg(PHY_msg * msg, char *info)
 		print_debug("status = %s\n", phyStateToString(msg->x.ed_conf.status));
 		print_debug("energyLevel = %u\n", msg->x.ed_conf.energyLevel);
 		break;
-	case PLME_GET_REQEST:
+	case PLME_GET_REQUEST:
 		print_debug("attribute = %s\n", phyAttrToString(msg->x.get_req.attribute));
 		break;
 	case PLME_GET_CONFIRM:
@@ -446,7 +446,7 @@ send_test(void)
 			msg.length = SIZEOF_PLME_ED_REQUEST;
 			send_msg(&msg);
 			break;
-		case PLME_GET_REQEST:
+		case PLME_GET_REQUEST:
 			msg.length = SIZEOF_PLME_GET_REQEST;
 			for (attr=phyCurrentChannel; attr<=phySymbolsPerOctet; attr++) {
 				msg.x.set_req.attribute = attr;

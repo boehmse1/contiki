@@ -28,8 +28,8 @@
 #define print_debug(...)
 #endif
 
-#define IEEE802154_MAC_INTERFACE	0
-#define IEEE802154_PHY_INTERFACE	1
+#define IEEE802154_PHY_INTERFACE	0
+#define IEEE802154_MAC_INTERFACE	1
 
 /*---------------------------------------------------------------------------*/
 PROCESS(transceiver_init, "transceiver_init");
@@ -50,8 +50,8 @@ void initialize()
 
 	/* init pcap interfaces */
 	pcapng_line_write_shb();
-	pcapng_line_write_idb(DLT_IEEE802_15_4_NO_FCS, DLT_IEEE802_15_4_LEN);
 	pcapng_line_write_idb(DLT_IEEE802_15_4_PHY, DLT_IEEE802_15_4_LEN);
+	pcapng_line_write_idb(DLT_IEEE802_15_4_NO_FCS, DLT_IEEE802_15_4_LEN);
 
 // todo: pcap_logMsg
 // PCAPNG for log messages via Custom Block (CB)
@@ -229,7 +229,7 @@ void handleMessage(PHY_msg * msg)
 		conf.x.ed_conf.status = -1;
 		send_msg(&conf);
 		break;
-	case PLME_GET_REQEST:
+	case PLME_GET_REQUEST:
 		get_attribute(msg->x.get_req.attribute);
 		break;
 	case PLME_SET_TRX_STATE_REQUEST:
