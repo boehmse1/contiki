@@ -1065,13 +1065,12 @@ rf230_transmit(unsigned short payload_len)
   HAL_LEAVE_CRITICAL_REGION();
   PRINTF("rf230_transmit: %d\n", (int)total_len);
 
-#if DEBUG>1
+#if DEBUG
 /* Note the dumped packet will have a zero checksum unless compiled with RF230_CONF_CHECKSUM
  * since we don't know what it will be if calculated by the hardware.
  */
   {
     uint8_t i;
-    PRINTF("0000");       //Start a new wireshark packet
     for (i=0;i<total_len;i++) PRINTF(" %02x",buffer[i]);
     PRINTF("\n");
   }

@@ -18,7 +18,7 @@
 #include "sys/clock.h"
 #include <stdio.h>
 
-#define DEBUG 1
+#define DEBUG 0
 #if DEBUG && DEBUG == 1
 #define print_debug(fmt, args...) printf("[TRANSCEIVER]: " fmt "\n", ##args)
 #elif DEBUG && DEBUG == 2

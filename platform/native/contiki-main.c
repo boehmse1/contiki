@@ -161,11 +161,11 @@ set_rime_addr(void)
   }
 #endif
   linkaddr_set_node_addr(&addr);
-  printf("Rime started with address ");
-  for(i = 0; i < sizeof(addr.u8) - 1; i++) {
-    printf("%d.", addr.u8[i]);
-  }
-  printf("%d\n", addr.u8[i]);
+  //printf("Rime started with address ");
+  //for(i = 0; i < sizeof(addr.u8) - 1; i++) {
+  //  printf("%d.", addr.u8[i]);
+  //}
+  //printf("%d\n", addr.u8[i]);
 }
 
 
@@ -178,12 +178,12 @@ main(int argc, char **argv)
 {
 #if NETSTACK_CONF_WITH_IPV6
 #if UIP_CONF_IPV6_RPL
-  printf(CONTIKI_VERSION_STRING " started with IPV6, RPL\n");
+  //printf(CONTIKI_VERSION_STRING " started with IPV6, RPL\n");
 #else
-  printf(CONTIKI_VERSION_STRING " started with IPV6\n");
+  //printf(CONTIKI_VERSION_STRING " started with IPV6\n");
 #endif
 #else
-  printf(CONTIKI_VERSION_STRING " started\n");
+  //printf(CONTIKI_VERSION_STRING " started\n");
 #endif
 
   /* crappy way of remembering and accessing argc/v */
@@ -214,7 +214,7 @@ main(int argc, char **argv)
   set_rime_addr();
 
   netstack_init();
-  printf("MAC %s RDC %s NETWORK %s\n", NETSTACK_MAC.name, NETSTACK_RDC.name, NETSTACK_NETWORK.name);
+  //printf("MAC %s RDC %s NETWORK %s\n", NETSTACK_MAC.name, NETSTACK_RDC.name, NETSTACK_NETWORK.name);
 
 #if NETSTACK_CONF_WITH_IPV6
   queuebuf_init();
@@ -225,19 +225,19 @@ main(int argc, char **argv)
 #ifdef __CYGWIN__
   process_start(&wpcap_process, NULL);
 #endif
-  printf("Tentative link-local IPv6 address ");
+  //printf("Tentative link-local IPv6 address ");
   {
     uip_ds6_addr_t *lladdr;
-    int i;
+    //int i;
     lladdr = uip_ds6_get_link_local(-1);
-    for(i = 0; i < 7; ++i) {
-      printf("%02x%02x:", lladdr->ipaddr.u8[i * 2],
-             lladdr->ipaddr.u8[i * 2 + 1]);
-    }
+    //for(i = 0; i < 7; ++i) {
+    //  printf("%02x%02x:", lladdr->ipaddr.u8[i * 2],
+    //         lladdr->ipaddr.u8[i * 2 + 1]);
+    //}
     /* make it hardcoded... */
     lladdr->state = ADDR_AUTOCONF;
 
-    printf("%02x%02x\n", lladdr->ipaddr.u8[14], lladdr->ipaddr.u8[15]);
+    //printf("%02x%02x\n", lladdr->ipaddr.u8[14], lladdr->ipaddr.u8[15]);
   }
 #elif NETSTACK_CONF_WITH_IPV4
   process_start(&tcpip_process, NULL);

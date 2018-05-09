@@ -7,7 +7,7 @@
 
 #include "serial-phy.h"
 
-#define DEBUG 1
+#define DEBUG 0
 #if DEBUG && DEBUG == 1
 #define print_debug(fmt, args...) printf("[802154_PHY]: " fmt, ##args)
 #elif DEBUG && DEBUG == 2
@@ -312,12 +312,14 @@ void send_msg(PHY_msg * msg)
 void
 print_msg_payload(void *data, uint8_t length, char *info)
 {
+#if DEBUG
 	uint8_t i;
     print_debug("%s = ", info ? info : "");
     for (i = 0; (i < length) && (i < aMaxPHYPacketSize); i++) {
     	printf("%x, ", *(uint8_t *)(data+i));
     }
     printf("\n");
+#endif
 }
 
 /**
