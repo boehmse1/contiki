@@ -12,7 +12,7 @@
 #include "net/packetbuf.h"
 #include "lib/ringbuf.h"
 
-#define DEBUG 1
+#define DEBUG 0
 #if defined(DEBUG) && DEBUG == 1
 #define print_debug(fmt, args...) printf("[Pcapng_Line]: " fmt "\n", ##args)
 #define PRINTD(...)
@@ -28,9 +28,11 @@
 #if FILEWRITE==0
 #include "uart.h"
 #define writefile(...)
-#else
+#elif FILEWRITE==1
 #include <stdio.h>
 #define writefile(fmt, args...) fprintf(fmt, ##args)
+#elif FILEWRITE==2
+#include <stdio.h>
 #endif
 
 #ifdef PCAP_LINE_CONF_BUFSIZE
@@ -53,7 +55,7 @@ enum {
 static uint8_t state = PCAPNG_IDLE;
 static struct ringbuf rxbuf;
 static uint8_t rxbuf_data[BUFSIZE];
-#if FILEWRITE
+#if FILEWRITE==1
 static FILE *f;
 #endif
 
@@ -73,14 +75,16 @@ void pcapng_line_write(const void *_ptr, uint32_t len)
 	uint16_t i;
 
 	for (i=0; i<len; i++ ) {
-#if FILEWRITE
+#if FILEWRITE==1
 		writefile(f, "%c", *ptr++);
+#elif FILEWRITE==2
+		printf("%c", *ptr++);
 #else
 		uart_putc(*ptr++);
 #endif
 	}
 
-#if FILEWRITE
+#if FILEWRITE==1
 	fflush(f);
 #endif
 }
@@ -97,10 +101,11 @@ pcapng_line_write_shb(void) // options?
 	bh.block_total_length = (uint32_t)(sizeof(bh) + sizeof(shb) + 4); // todo options len
 
 	/* write fixed block content */
-	shb.magic 			= PCAPNG_MAGIC_NUMBER;
-	shb.version_major 	= PCAPNG_VERSION_MAJOR;
-	shb.version_minor 	= PCAPNG_VERSION_MINOR;
-	shb.section_length 	= PCAPNG_SECTION_LENGTH_UNDEFINED;
+	shb.magic 				= PCAPNG_MAGIC_NUMBER;
+	shb.version_major 		= PCAPNG_VERSION_MAJOR;
+	shb.version_minor 		= PCAPNG_VERSION_MINOR;
+	shb.section_length_high = PCAPNG_SECTION_LENGTH_UNDEFINED;
+	shb.section_length_low 	= PCAPNG_SECTION_LENGTH_UNDEFINED;
 
 	pcapng_line_write(&bh, sizeof(bh));
 	pcapng_line_write(&shb, sizeof(shb));
@@ -185,14 +190,14 @@ pcapng_line_read_shb(uint8_t * ptr, pcapng_section_header_block_s * section)
 	section->version_major |= (uint16_t) *data++ << 8;
 	section->version_minor |= (uint16_t) *data++;
 	section->version_minor |= (uint16_t) *data++ << 8;
-	section->section_length |= (uint64_t) *data++;
-	section->section_length |= (uint64_t) *data++ << 8;
-	section->section_length |= (uint64_t) *data++ << 16;
-	section->section_length |= (uint64_t) *data++ << 24;
-	section->section_length |= (uint64_t) *data++ << 32;
-	section->section_length |= (uint64_t) *data++ << 40;
-	section->section_length |= (uint64_t) *data++ << 48;
-	section->section_length |= (uint64_t) *data++ << 56;
+	section->section_length_high |= (uint32_t) *data++;
+	section->section_length_high |= (uint32_t) *data++ << 8;
+	section->section_length_high |= (uint32_t) *data++ << 16;
+	section->section_length_high |= (uint32_t) *data++ << 24;
+	section->section_length_low |= (uint32_t) *data++;
+	section->section_length_low |= (uint32_t) *data++ << 8;
+	section->section_length_low |= (uint32_t) *data++ << 16;
+	section->section_length_low |= (uint32_t) *data++ << 24;
 }
 
 /*---------------------------------------------------------------------------*/
@@ -361,7 +366,7 @@ pcapng_line_init(void)
   ringbuf_init(&rxbuf, rxbuf_data, sizeof(rxbuf_data));
   process_start(&pcapng_line_process, NULL);
   /* todo: init pcap constants e.g., time */
-#if FILEWRITE
+#if FILEWRITE==1
   f = fopen("test2.pcapng", "wb");
 #endif
 }

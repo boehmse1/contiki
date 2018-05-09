@@ -85,7 +85,10 @@ typedef struct pcapng_section_header_block_t {
 	uint32_t magic;					/* magic number */
 	uint16_t version_major;			/* major version number */
 	uint16_t version_minor;			/* minor version number */
-	uint64_t section_length; 		/* might be -1 for unknown */
+	//uint64_t section_length; 		/* might be -1 for unknown */
+	uint32_t section_length_high; 	/* for convenience with small data types */
+	uint32_t section_length_low; 	/* for convenience with small data types */
+
 	/* ... Options ... */
 }pcapng_section_header_block_s;
 
