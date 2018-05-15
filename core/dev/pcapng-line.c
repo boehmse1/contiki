@@ -12,13 +12,18 @@
 #include "net/packetbuf.h"
 #include "lib/ringbuf.h"
 
-#define DEBUG 0
+#include "sys/rtimer.h"
+
+#define DEBUG 3
 #if defined(DEBUG) && DEBUG == 1
 #define print_debug(fmt, args...) printf("[Pcapng_Line]: " fmt "\n", ##args)
 #define PRINTD(...)
 #elif defined(DEBUG) && DEBUG == 2
 #define PRINTD(fmt, args...) printf("[Pcapng_Line]: " fmt "\n", ##args)
 #define print_debug(...)
+#elif defined(DEBUG) && DEBUG == 3
+#define printd(fmt, args...) printf("[Pcapng_Line]: " fmt "\n", ##args)
+#define PRINTD(...)
 #else
 #define PRINTD(...)
 #define print_debug(...)
@@ -58,6 +63,9 @@ static uint8_t rxbuf_data[BUFSIZE];
 #if FILEWRITE==1
 static FILE *f;
 #endif
+
+static rtimer_clock_t rx_time;
+static rtimer_clock_t tx_time;
 
 PROCESS(pcapng_line_process, "PCAPNG serial driver");
 
@@ -162,19 +170,33 @@ pcapng_line_write_epb(uint32_t interface, pcap_timeval_s *ts, const void * data,
 	epb.captured_len 		= length;
 	epb.packet_len 			= length;
 
+#if DEBUG == 3
+	/* for time measurement */
+	rtimer_clock_t time;
+	tx_time = rtimer_arch_now();
+	time = tx_time - rx_time;
+	epb.timestamp_high		= (time - (time % RTIMER_ARCH_SECOND)) / RTIMER_ARCH_SECOND;
+	epb.timestamp_low		= 1000000 * (time % RTIMER_ARCH_SECOND) / RTIMER_ARCH_SECOND;
+#endif
+
 	pcapng_line_write(&bh, sizeof(bh));
 	pcapng_line_write(&epb, sizeof(epb));
 	pcapng_line_write(data, length);
 	pcapng_line_write(&pad, pad_len);
 	pcapng_line_write(&bh.block_total_length, 4);
+
+#if DEBUG == 3
+	/* for time measurement */
+	printd("Response Time (us): %lu", (epb.timestamp_high * 1000000) + epb.timestamp_low);
+#endif
 }
 
 /*---------------------------------------------------------------------------*/
-void
-pcapng_line_write_cb(const void * data, uint32_t length)
-{
-
-}
+//void
+//pcapng_line_write_cb(const void * data, uint32_t length)
+//{
+//
+//}
 
 /*---------------------------------------------------------------------------*/
 void
@@ -330,6 +352,12 @@ PROCESS_THREAD(pcapng_line_process, ev, data)
 			  }
 			  /* last byte of block */
 			  if (ptr == (header.block_total_length + pad_len)) {
+
+#if DEBUG == 3
+				  /* for time measurement */
+				  rx_time = rtimer_arch_now();
+#endif
+
 				  /* broadcast event by type */
 				  switch (header.block_type) {
 
@@ -337,7 +365,8 @@ PROCESS_THREAD(pcapng_line_process, ev, data)
 					  break;
 				  case PCAPNG_BLOCK_TYPE_IDB: process_post(PROCESS_BROADCAST, pcapng_event_idb, buf);
 					  break;
-				  case PCAPNG_BLOCK_TYPE_EPB: process_post(PROCESS_BROADCAST, pcapng_event_epb, buf);
+				  case PCAPNG_BLOCK_TYPE_EPB:
+					  process_post(PROCESS_BROADCAST, pcapng_event_epb, buf);
 					  break;
 				  default:
 					  PRINTD("PCAPNG_BLOCK_TYPE(%u, %s) UNSUPPORTED!\n", header.block_type, pcapngBlockTypeToString(header.block_type));
@@ -365,6 +394,9 @@ pcapng_line_init(void)
 {
   ringbuf_init(&rxbuf, rxbuf_data, sizeof(rxbuf_data));
   process_start(&pcapng_line_process, NULL);
+#if DEBUG == 3
+  printd("Measurement/Debug Mode");
+#endif
   /* todo: init pcap constants e.g., time */
 #if FILEWRITE==1
   f = fopen("test2.pcapng", "wb");

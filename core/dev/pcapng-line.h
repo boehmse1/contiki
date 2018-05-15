@@ -32,7 +32,7 @@ void pcapng_line_write_idb(uint16_t datalink, uint32_t snaplen);
 
 void pcapng_line_write_epb(uint32_t interface, pcap_timeval_s *ts, const void * data, uint32_t length);
 
-void pcapng_line_write_cb(const void * data, uint32_t length);
+//void pcapng_line_write_cb(const void * data, uint32_t length);
 
 void pcapng_line_read_shb(uint8_t * ptr, pcapng_section_header_block_s * section);
 

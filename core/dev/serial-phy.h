@@ -91,9 +91,11 @@ typedef struct pd_data_ind
 /** ----------- PHY Management Service Primitives ------------ */
 
 /** @brief plme cca request */
-typedef struct plme_cca_req
-{
-} plme_cca_req;
+//typedef struct plme_cca_req
+//{
+//} plme_cca_req;
+
+typedef plme_cca_req;
 
 /** @brief plme cca confirm */
 typedef struct plme_cca_conf
@@ -104,9 +106,11 @@ typedef struct plme_cca_conf
 /** --------------------------- */
 
 /** @brief plme ed request */
-typedef struct plme_ed_req
-{
-} plme_ed_req;
+//typedef struct plme_ed_req
+//{
+//} plme_ed_req;
+
+typedef plme_ed_req;
 
 /** @brief plme ed confirm */
 typedef struct plme_ed_conf
