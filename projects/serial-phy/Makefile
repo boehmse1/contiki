@@ -1,10 +1,12 @@
 CONTIKI = ../..
 #CONTIKI_PROJECT = transceiver
+#CONTIKI_PROJECT = transceiver.hex
 CONTIKI_PROJECT = transceiver.elf
 all: $(CONTIKI_PROJECT)
 
 #TARGET=native
 TARGET=rcb128rfa1
+#TARGET=waveshare-cc2530
 
 UIP_CONF_RPL=0
 UIP_CONF_IPV6=0
@@ -25,4 +27,4 @@ serialdebug:
 	@./../../../../contiki/tools/sky/serialdump-linux -b57600 /dev/ttyUSB1
 
 serialfiledump:
-	@./../../../../contiki/tools/sky/serialdump-linux -b57600 /dev/ttyUSB1 > log.pcap
+	@./../../../../contiki/tools/sky/serialdump-linux -b57600 /dev/ttyUSB1 > log.pcapf

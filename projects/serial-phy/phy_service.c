@@ -6,8 +6,9 @@
  */
 
 #include "phy_service.h"
+//#include "sys/rtimer.h"
 
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG && DEBUG == 1
 #define print_debug(fmt, args...) printf("[802154_Serial_PHY]: " fmt, ##args)
 #elif DEBUG && DEBUG == 2
@@ -289,7 +290,7 @@ serialize_msg(PHY_msg * msg, uint8_t buffer[aMaxPHYPacketSize])
  */
 void send_msg(PHY_msg * msg)
 {
-	uint32_t time;
+	rtimer_clock_t time;
 	pcap_timeval_s timestamp;
 	uint8_t size = aMaxPHYPacketSize+maxPHYMessageHeaderSize;
 
@@ -297,9 +298,9 @@ void send_msg(PHY_msg * msg)
 	memset(&buffer, 0, sizeof(buffer));
 	serialize_msg(msg, buffer);
 
-	time = clock_time();
-	timestamp.ts_sec = (time - (time % CLOCK_SECOND)) / CLOCK_SECOND;
-	timestamp.ts_usec = 1000000 * (time % CLOCK_SECOND) / CLOCK_SECOND;
+	time = rtimer_arch_now();
+	timestamp.ts_sec = (time - (time % RTIMER_ARCH_SECOND)) / RTIMER_ARCH_SECOND;
+	timestamp.ts_usec = 1000000 * (time % RTIMER_ARCH_SECOND) / RTIMER_ARCH_SECOND;
 
 	pcapng_line_write_epb(1, &timestamp, &buffer, msg->length);
 
