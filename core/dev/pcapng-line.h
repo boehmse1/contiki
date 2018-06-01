@@ -24,6 +24,8 @@ extern process_event_t pcapng_event_idb;
 extern process_event_t pcapng_event_epb;
 //extern process_event_t pcapng_event_cb;
 
+void pcapng_line_register_consumer_process(struct process *consumer);
+
 void pcapng_line_write(const void *_ptr, uint32_t len);
 
 void pcapng_line_write_shb(void);

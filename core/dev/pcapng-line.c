@@ -14,7 +14,7 @@
 
 #include "sys/rtimer.h"
 
-#define DEBUG 3
+#define DEBUG 0
 #if defined(DEBUG) && DEBUG == 1
 #define print_debug(fmt, args...) printf("[Pcapng_Line]: " fmt "\n", ##args)
 #define PRINTD(...)
@@ -67,12 +67,30 @@ static FILE *f;
 static rtimer_clock_t rx_time;
 static rtimer_clock_t tx_time;
 
+/* default broadcast events without consumer registered */
+static struct process *p = PROCESS_BROADCAST;
+static uint8_t registered = 0;
+
 PROCESS(pcapng_line_process, "PCAPNG serial driver");
 
 process_event_t pcapng_event_shb;
 process_event_t pcapng_event_idb;
 process_event_t pcapng_event_epb;
 //process_event_t pcapng_event_cb;
+
+/*
+ * register a consumer process for pcapng events
+ */
+void pcapng_line_register_consumer_process(struct process *consumer)
+{
+	if (!registered) {
+		p = consumer;
+		PRINTD("consumer process '%s' registered!\n", consumer->name);
+		registered = 1;
+	} else {
+		PRINTD("consumer process '%s' is already registered!\n", p->name);
+	}
+}
 
 /*
  * writes raw bytes to serial line
@@ -172,11 +190,11 @@ pcapng_line_write_epb(uint32_t interface, pcap_timeval_s *ts, const void * data,
 
 #if DEBUG == 3
 	/* for time measurement */
-	rtimer_clock_t time;
-	tx_time = rtimer_arch_now();
-	time = tx_time - rx_time;
-	epb.timestamp_high		= (time - (time % RTIMER_ARCH_SECOND)) / RTIMER_ARCH_SECOND;
-	epb.timestamp_low		= 1000000 * (time % RTIMER_ARCH_SECOND) / RTIMER_ARCH_SECOND;
+	//rtimer_clock_t time;
+	//tx_time = rtimer_arch_now();
+	//time = tx_time - rx_time;
+	//epb.timestamp_high		= (time - (time % RTIMER_ARCH_SECOND)) / RTIMER_ARCH_SECOND;
+	//epb.timestamp_low		= 1000000 * (time % RTIMER_ARCH_SECOND) / RTIMER_ARCH_SECOND;
 #endif
 
 	pcapng_line_write(&bh, sizeof(bh));
@@ -187,6 +205,11 @@ pcapng_line_write_epb(uint32_t interface, pcap_timeval_s *ts, const void * data,
 
 #if DEBUG == 3
 	/* for time measurement */
+	rtimer_clock_t time;
+	tx_time = rtimer_arch_now();
+	time = tx_time - rx_time;
+	epb.timestamp_high		= (time - (time % RTIMER_ARCH_SECOND)) / RTIMER_ARCH_SECOND;
+	epb.timestamp_low		= 1000000 * (time % RTIMER_ARCH_SECOND) / RTIMER_ARCH_SECOND;
 	printd("Response Time (us): %lu", (epb.timestamp_high * 1000000) + epb.timestamp_low);
 #endif
 }
@@ -284,7 +307,6 @@ PROCESS_THREAD(pcapng_line_process, ev, data)
   static uint8_t buf[BUFSIZE*2];
   static pcapng_block_header_s header;
   static uint16_t ptr;
-  static uint8_t pad_len;
   static int c;
 
   PROCESS_BEGIN();
@@ -297,7 +319,7 @@ PROCESS_THREAD(pcapng_line_process, ev, data)
   while (1) {
 	  /* get character from buffer */
 	  c = ringbuf_get(&rxbuf);
-	  PRINTD("PCAPNG_RECEIVED_CHARACTER %i on pos %i\n", c, ptr);
+	  PRINTD("PCAPNG_RECEIVED_CHARACTER %i on pos %i", c, ptr);
 
 	  /* if buffer is empty */
 	  if (c == -1) {
@@ -324,18 +346,14 @@ PROCESS_THREAD(pcapng_line_process, ev, data)
 			  else if (ptr == 8) header.block_total_length |= (uint32_t) c << 24;
 			  /* if we have a valid pcapng block type with length*/
 			  if (ptr == 8) {
-				  PRINTD("PCAPNG_BLOCK(%s, %u)\n", pcapngBlockTypeToString(header.block_type), header.block_total_length);
+				  PRINTD("PCAPNG_BLOCK(%s, %u)", pcapngBlockTypeToString(header.block_type), header.block_total_length);
 				  if (pcapngBlockTypeValid(header.block_type)) {
 					  /* read the pcapng block */
 					  state = PCAPNG_READ_BLOCK;
 					  /* set length of padding bytes */
 					  if (header.block_total_length%4) {
-						  pad_len = 4 - (header.block_total_length%4);
-					  } else {
-						  pad_len = 0;
+						  PRINTD("ERROR: Total block length must ne a multiple of 4!");
 					  }
-
-					  PRINTD("pad_len = %u", pad_len);
 				  } else {
 					  /* reset the packet header and pointer */
 					  header.block_type = 0;
@@ -347,11 +365,11 @@ PROCESS_THREAD(pcapng_line_process, ev, data)
 
 		  case PCAPNG_READ_BLOCK:
 			  /* just read the whole pcapng block into buffer */
-			  if (ptr < (header.block_total_length + pad_len)) {
+			  if (ptr < (header.block_total_length)) {
 				  buf[ptr++] = (uint8_t) c;
 			  }
 			  /* last byte of block */
-			  if (ptr == (header.block_total_length + pad_len)) {
+			  if (ptr == (header.block_total_length)) {
 
 #if DEBUG == 3
 				  /* for time measurement */
@@ -361,12 +379,14 @@ PROCESS_THREAD(pcapng_line_process, ev, data)
 				  /* broadcast event by type */
 				  switch (header.block_type) {
 
-				  case PCAPNG_BLOCK_TYPE_SHB: process_post(PROCESS_BROADCAST, pcapng_event_shb, buf);
+				  case PCAPNG_BLOCK_TYPE_SHB:
+					  process_post(p, pcapng_event_shb, buf);
 					  break;
-				  case PCAPNG_BLOCK_TYPE_IDB: process_post(PROCESS_BROADCAST, pcapng_event_idb, buf);
+				  case PCAPNG_BLOCK_TYPE_IDB:
+					  process_post(p, pcapng_event_idb, buf);
 					  break;
 				  case PCAPNG_BLOCK_TYPE_EPB:
-					  process_post(PROCESS_BROADCAST, pcapng_event_epb, buf);
+					  process_post(p, pcapng_event_epb, buf);
 					  break;
 				  default:
 					  PRINTD("PCAPNG_BLOCK_TYPE(%u, %s) UNSUPPORTED!\n", header.block_type, pcapngBlockTypeToString(header.block_type));

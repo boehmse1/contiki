@@ -18,7 +18,7 @@
 #include "sys/clock.h"
 #include <stdio.h>
 
-#define DEBUG 0
+#define DEBUG 1
 #if DEBUG && DEBUG == 1
 #define print_debug(fmt, args...) printf("[TRANSCEIVER]: " fmt "\n", ##args)
 #elif DEBUG && DEBUG == 2
@@ -42,6 +42,9 @@ AUTOSTART_PROCESSES(&transceiver_init);
 void initialize()
 {
 	print_debug("initialize");
+
+	/* register for pcapng events */
+	pcapng_line_register_consumer_process(&transceiver_init);
 
 	packetbuf_clear();
 
