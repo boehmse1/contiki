@@ -34,7 +34,8 @@
 #include <string.h>
 #include <avr/pgmspace.h>
 #include "symtab.h"
-#include "loader/symbols.h"
+#include "loader/symbols-def.h"
+//#include "loader/symbols.h"
 
 #define SYMTAB_CONF_BINARY_SEARCH 0
 
