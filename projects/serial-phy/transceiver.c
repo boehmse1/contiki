@@ -16,6 +16,7 @@
 #include "net/netstack.h"
 #include "net/packetbuf.h"
 #include "sys/clock.h"
+#include "pt-sem.h"
 #include <stdio.h>
 
 #define DEBUG 1
@@ -28,8 +29,15 @@
 #define print_debug(...)
 #endif
 
-#define IEEE802154_PHY_INTERFACE	0
-#define IEEE802154_MAC_INTERFACE	1
+pcap_timeval_s SIMULATION_TIMER_OFFSET_US = { .ts_sec = 0, .ts_usec = 500 };
+pcap_timeval_s START_TIME_OFFSET = { .ts_sec = 0, .ts_usec = 0 };
+
+rtimer_clock_t rtime;
+clock_time_t sim_time;
+pcap_timeval_s simtime;
+
+//#define IEEE802154_PHY_INTERFACE	0
+//#define IEEE802154_MAC_INTERFACE	1
 
 /*---------------------------------------------------------------------------*/
 PROCESS(transceiver_init, "transceiver_init");
@@ -54,7 +62,7 @@ void initialize()
 	/* init pcap interfaces */
 	pcapng_line_write_shb();
 	pcapng_line_write_idb(DLT_IEEE802_15_4_PHY, DLT_IEEE802_15_4_LEN);
-	pcapng_line_write_idb(DLT_IEEE802_15_4_NO_FCS, DLT_IEEE802_15_4_LEN);
+	//pcapng_line_write_idb(DLT_IEEE802_15_4_NO_FCS, DLT_IEEE802_15_4_LEN);
 
 // todo: pcap_logMsg
 // PCAPNG for log messages via Custom Block (CB)
@@ -62,6 +70,114 @@ void initialize()
 // SHB, IDB0 - regular MAC, IDB1 - PHY service primitives (different link types)
 // live Debugging interface forwarder?
 // motivation: simple debugging using wireshark & co.
+}
+
+pcap_timeval_s clock_time_add(pcap_timeval_s *a, pcap_timeval_s *b)
+{
+    pcap_timeval_s res;
+    res.ts_sec = a->ts_sec + b->ts_sec;
+    res.ts_usec = a->ts_usec + b->ts_usec;
+    if (res.ts_usec>1000000) {
+        res.ts_sec++;
+        res.ts_usec -= 1000000;
+    }
+    return res;
+}
+
+pcap_timeval_s clock_time_subtract(pcap_timeval_s *a,pcap_timeval_s *b)
+{
+    pcap_timeval_s res;
+    res.ts_sec = a->ts_sec - b->ts_sec;
+    res.ts_usec = a->ts_usec - b->ts_usec;
+    if (res.ts_usec<0) {
+        res.ts_sec--;
+        res.ts_usec += 1000000;
+    }
+    return res;
+}
+
+uint32_t clock_time_diff_usec(pcap_timeval_s *a,pcap_timeval_s *b)
+{
+    uint32_t sec = a->ts_sec - b->ts_sec;
+    uint32_t usec = a->ts_usec - b->ts_usec;
+    return sec*1000000L + usec;
+}
+
+uint8_t clock_time_greater(pcap_timeval_s *a,pcap_timeval_s *b)
+{
+    if (a->ts_sec==b->ts_sec)
+        return a->ts_usec > b->ts_usec;
+    else
+        return (uint32_t)a->ts_sec > (uint32_t)b->ts_sec;
+}
+
+
+void get_rtime(pcap_timeval_s *time)
+{
+    rtime = rtimer_arch_now();
+    time->ts_usec = 1000000 * (rtime % RTIMER_ARCH_SECOND) / RTIMER_ARCH_SECOND;
+    time->ts_sec = (rtime - (rtime % RTIMER_ARCH_SECOND)) / RTIMER_ARCH_SECOND;
+}
+
+void get_time(pcap_timeval_s *time)
+{
+    sim_time = clock_time();
+    time->ts_usec = 1000000 * (sim_time % CLOCK_SECOND) / CLOCK_SECOND;
+    time->ts_sec = (sim_time - (sim_time % CLOCK_SECOND)) / CLOCK_SECOND;
+}
+
+void print_time(pcap_timeval_s *time)
+{
+    print_debug("Clock Time: %" PRIu32 ".%" PRIu32, time->ts_sec, time->ts_usec);
+}
+
+void print_rtime(rtimer_clock_t *time)
+{
+    print_debug("Arch RTime: %u", *time);
+}
+
+void get_time_with_offset(pcap_timeval_s *time)
+{
+    pcap_timeval_s now, offset_now;
+    get_time(&now);
+    offset_now = clock_time_subtract(&now, &START_TIME_OFFSET);
+    offset_now = clock_time_subtract(&offset_now, &SIMULATION_TIMER_OFFSET_US);
+    time->ts_usec = offset_now.ts_usec;
+    time->ts_sec = offset_now.ts_sec;
+}
+
+void set_time_start_offset()
+{
+    get_time(&START_TIME_OFFSET);
+}
+
+void set_event_time(pcap_timeval_s *time, pcapng_enhanced_packet_block_s *packet)
+{
+    pcap_timeval_s event_time;
+    pcap_timeval_s pcap_time;
+    pcap_time.ts_sec = packet->timestamp_high;
+    pcap_time.ts_usec = packet->timestamp_low;
+    event_time = clock_time_add(&pcap_time, &SIMULATION_TIMER_OFFSET_US);
+    time->ts_usec = event_time.ts_usec;
+    time->ts_sec = event_time.ts_sec;
+
+}
+
+void wait_until(pcap_timeval_s *targetTime)
+{
+    // if there's more than 200ms to wait, wait in 10ms chunks
+    pcap_timeval_s curTime;
+    //print_time(targetTime);
+
+    get_time_with_offset(&curTime);
+
+    while (targetTime->ts_sec - curTime.ts_sec >= 2
+    || clock_time_diff_usec(targetTime, &curTime) >= 20000) {
+        //print_time(&curTime);
+        //clock_delay_usec(10000); // 10ms
+        rtimer_arch_sleep(10000/64);
+        get_time_with_offset(&curTime);
+    }
 }
 
 /**
@@ -201,11 +317,27 @@ void receive()
  *
  * @param msg address to be handled
  */
-void handleMessage(PHY_msg * msg)
+void handleMessage(PHY_msg * msg, pcap_timeval_s *targetTime)
 {
-	print_msg(msg, "received");
+    pcap_timeval_s now;
+    uint16_t usec;
+    PHY_msg conf;
 
-	PHY_msg conf;
+    //print_debug("received!");
+	//print_msg(msg, "received");
+
+	get_time_with_offset(&now);
+
+	/* init rtimer */
+    //rtimer_init();
+
+    usec = clock_time_diff_usec(targetTime, &now);
+    if (usec > 0) {
+        rtimer_arch_sleep(usec/64);
+    }
+
+    print_time(&now);
+    print_debug("usec: %i", usec);
 
 	switch (msg->type) {
 	case PD_DATA_REQUEST:
@@ -259,11 +391,76 @@ PROCESS_THREAD(transceiver_init, ev, data)
 	static pcapng_enhanced_packet_block_s packet;
 	static PHY_msg msg;
 	static uint8_t packetCounter = 0;
+    pcap_timeval_s time;
+    pcap_timeval_s time2;
+    pcap_timeval_s time3;
+    pcap_timeval_s time4;
+    rtimer_clock_t rt;
+    rtimer_clock_t rt2;
+    clock_time_t t;
+    clock_time_t t2;
+    pcap_timeval_s pcap_time;
 
 	PROCESS_BEGIN();
 
 	/* init module */
 	initialize();
+
+    /* print time */
+    get_rtime(&time);
+    rt = rtime;
+    rtimer_arch_sleep(1); // 10us
+    get_rtime(&time2);
+    rt2 = rtime;
+
+    print_time(&time);
+    print_rtime(&rt);
+    print_debug(" -- wait 64us -- ");
+    print_time(&time2);
+    print_rtime(&rt2);
+    print_debug(" ");
+
+    /* print time */
+    get_time(&time3);
+    t = sim_time;
+    rtimer_arch_sleep(200000/64); // 200ms
+    get_time(&time4);
+    t2 = sim_time;
+
+    print_time(&time3);
+    print_rtime(&t);
+    print_debug(" -- wait 200ms -- ");
+    print_time(&time4);
+    print_rtime(&t2);
+    print_debug(" ");
+
+/* print time */
+get_time(&time3);
+t = sim_time;
+rtimer_arch_sleep(100000/64); // 100ms
+get_time(&time4);
+t2 = sim_time;
+
+print_time(&time3);
+print_rtime(&t);
+print_debug(" -- wait 100ms -- ");
+print_time(&time4);
+print_rtime(&t2);
+print_debug(" ");
+
+/* print time */
+get_time(&time3);
+t = sim_time;
+rtimer_arch_sleep(50000/64); // 50ms
+get_time(&time4);
+t2 = sim_time;
+
+print_time(&time3);
+print_rtime(&t);
+print_debug(" -- wait 50ms -- ");
+print_time(&time4);
+print_rtime(&t2);
+print_debug(" ");
 
 	/* wait for pcapng stream init */
 //	PROCESS_WAIT_EVENT_UNTIL(ev == pcapng_event_shb);
@@ -297,9 +494,31 @@ PROCESS_THREAD(transceiver_init, ev, data)
 				packet.timestamp_low,
 				packet.packet_len
 		);
-		/* deserialize and handle encapsulated message */
+
+		/* deserialize encapsulated message */
 		deserialize_msg((uint8_t *)data + sizeof(pcapng_block_header_s) + sizeof(pcapng_enhanced_packet_block_s), &msg);
-		handleMessage(&msg);
+
+		/* start simulation time */
+		if (packetCounter==1) {
+		    set_time_start_offset();
+		}
+
+        /* set event time */
+        set_event_time(&pcap_time, &packet);
+
+        /* wait until time arrives */
+        get_time_with_offset(&time);
+
+        if (clock_time_greater(&pcap_time, &time)) {
+            wait_until(&pcap_time);
+            //print_debug("handle message now!");
+            handleMessage(&msg, &pcap_time);
+        } else {
+            print_debug("ERROR: event time is behind execution!.");
+            print_time(&time);
+        }
+
+
 	}
 
 	PROCESS_END();
