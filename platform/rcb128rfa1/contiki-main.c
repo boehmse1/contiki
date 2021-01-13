@@ -25,7 +25,7 @@
 #include <string.h>
 
 #include "params.h"
-#include "radio/rf230bb/rf230bb.h"
+//#include "radio/rf230bb/rf230bb.h"
 #include "net/mac/frame802154.h"
 #include "net/mac/framer-802154.h"
 
