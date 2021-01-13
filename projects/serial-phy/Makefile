@@ -1,7 +1,7 @@
 CONTIKI = ../..
 #CONTIKI_PROJECT = transceiver
-#CONTIKI_PROJECT = transceiver.hex
-CONTIKI_PROJECT = transceiver.elf
+CONTIKI_PROJECT = transceiver.hex
+#CONTIKI_PROJECT = transceiver.elf
 all: $(CONTIKI_PROJECT)
 
 #TARGET=native
