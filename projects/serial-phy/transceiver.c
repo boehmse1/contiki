@@ -29,11 +29,11 @@
 #define print_debug(...)
 #endif
 
-pcap_timeval_s SIMULATION_TIMER_OFFSET_US = { .ts_sec = 0, .ts_usec = 500 };
+pcap_timeval_s SIMULATION_TIMER_OFFSET_US = { .ts_sec = 0, .ts_usec = 50000 };
 pcap_timeval_s START_TIME_OFFSET = { .ts_sec = 0, .ts_usec = 0 };
 
 rtimer_clock_t rtime;
-clock_time_t sim_time;
+clock_time_t clk_time;
 pcap_timeval_s simtime;
 
 //#define IEEE802154_PHY_INTERFACE	0
@@ -75,32 +75,40 @@ void initialize()
 pcap_timeval_s clock_time_add(pcap_timeval_s *a, pcap_timeval_s *b)
 {
     pcap_timeval_s res;
-    res.ts_sec = a->ts_sec + b->ts_sec;
-    res.ts_usec = a->ts_usec + b->ts_usec;
-    if (res.ts_usec>1000000) {
-        res.ts_sec++;
-        res.ts_usec -= 1000000;
+    int32_t sec, usec;
+    sec = a->ts_sec + b->ts_sec;
+    usec = a->ts_usec + b->ts_usec;
+    if (usec>1000000) {
+        sec++;
+        usec -= 1000000;
     }
+    res.ts_sec = (uint32_t)sec;
+    res.ts_usec = (uint32_t)usec;
     return res;
 }
 
 pcap_timeval_s clock_time_subtract(pcap_timeval_s *a,pcap_timeval_s *b)
 {
     pcap_timeval_s res;
-    res.ts_sec = a->ts_sec - b->ts_sec;
-    res.ts_usec = a->ts_usec - b->ts_usec;
-    if (res.ts_usec<0) {
-        res.ts_sec--;
-        res.ts_usec += 1000000;
+    int32_t sec, usec;
+    sec = a->ts_sec - b->ts_sec;
+    usec = a->ts_usec - b->ts_usec;
+    if (usec<0) {
+        sec--;
+        usec += 1000000;
     }
+    res.ts_sec = (uint32_t)sec;
+    res.ts_usec = (uint32_t)usec;
     return res;
 }
 
 uint32_t clock_time_diff_usec(pcap_timeval_s *a,pcap_timeval_s *b)
 {
-    uint32_t sec = a->ts_sec - b->ts_sec;
-    uint32_t usec = a->ts_usec - b->ts_usec;
-    return sec*1000000L + usec;
+    //uint32_t sec = a->ts_sec - b->ts_sec;
+    //uint32_t usec = a->ts_usec - b->ts_usec;
+    pcap_timeval_s res;
+    res = clock_time_subtract(a, b);
+    return res.ts_sec*1000000L + res.ts_usec;
 }
 
 uint8_t clock_time_greater(pcap_timeval_s *a,pcap_timeval_s *b)
@@ -121,14 +129,14 @@ void get_rtime(pcap_timeval_s *time)
 
 void get_time(pcap_timeval_s *time)
 {
-    sim_time = clock_time();
-    time->ts_usec = 1000000 * (sim_time % CLOCK_SECOND) / CLOCK_SECOND;
-    time->ts_sec = (sim_time - (sim_time % CLOCK_SECOND)) / CLOCK_SECOND;
+    clk_time = clock_time();
+    time->ts_usec = 1000000 * (clk_time % CLOCK_SECOND) / CLOCK_SECOND;
+    time->ts_sec = (clk_time - (clk_time % CLOCK_SECOND)) / CLOCK_SECOND;
 }
 
-void print_time(pcap_timeval_s *time)
+void print_time(char* msg, pcap_timeval_s *time)
 {
-    print_debug("Clock Time: %" PRIu32 ".%" PRIu32, time->ts_sec, time->ts_usec);
+    print_debug("%s time: %" PRIu32 ".%" PRIu32, msg, time->ts_sec, time->ts_usec);
 }
 
 void print_rtime(rtimer_clock_t *time)
@@ -136,48 +144,64 @@ void print_rtime(rtimer_clock_t *time)
     print_debug("Arch RTime: %u", *time);
 }
 
-void get_time_with_offset(pcap_timeval_s *time)
+void get_simulation_time(pcap_timeval_s *time)
 {
     pcap_timeval_s now, offset_now;
     get_time(&now);
     offset_now = clock_time_subtract(&now, &START_TIME_OFFSET);
-    offset_now = clock_time_subtract(&offset_now, &SIMULATION_TIMER_OFFSET_US);
     time->ts_usec = offset_now.ts_usec;
     time->ts_sec = offset_now.ts_sec;
 }
 
-void set_time_start_offset()
+void start_simulation_time(pcap_timeval_s *time)
 {
-    get_time(&START_TIME_OFFSET);
+    pcap_timeval_s now;
+    pcap_timeval_s pcap_time;
+
+    /* get current time */
+    get_time(&now);
+
+    /* save current time to start offset */
+    //Start_offset = current time - (pcap event time - timer offset)
+    pcap_time = clock_time_subtract(time, &SIMULATION_TIMER_OFFSET_US);
+    pcap_time = clock_time_subtract(&now, &pcap_time);
+
+    START_TIME_OFFSET.ts_sec = pcap_time.ts_sec;
+    START_TIME_OFFSET.ts_usec = pcap_time.ts_usec;
 }
 
 void set_event_time(pcap_timeval_s *time, pcapng_enhanced_packet_block_s *packet)
 {
     pcap_timeval_s event_time;
     pcap_timeval_s pcap_time;
+
+    /* get pcap packet timestamp */
     pcap_time.ts_sec = packet->timestamp_high;
     pcap_time.ts_usec = packet->timestamp_low;
+
+    /* add const timer offset */
     event_time = clock_time_add(&pcap_time, &SIMULATION_TIMER_OFFSET_US);
+
     time->ts_usec = event_time.ts_usec;
     time->ts_sec = event_time.ts_sec;
-
 }
 
 void wait_until(pcap_timeval_s *targetTime)
 {
-    // if there's more than 200ms to wait, wait in 10ms chunks
     pcap_timeval_s curTime;
-    //print_time(targetTime);
 
-    get_time_with_offset(&curTime);
+    get_simulation_time(&curTime);
 
-    while (targetTime->ts_sec - curTime.ts_sec >= 2
-    || clock_time_diff_usec(targetTime, &curTime) >= 20000) {
-        //print_time(&curTime);
-        //clock_delay_usec(10000); // 10ms
-        rtimer_arch_sleep(10000/64);
-        get_time_with_offset(&curTime);
+    /* DISABLE INTERRUPTS */
+
+    /* wait in 100ms Chunks if target time is more than 400ms ahead */
+    while (targetTime->ts_sec - curTime.ts_sec >= 1
+    || clock_time_diff_usec(targetTime, &curTime) >= 400000) {
+        rtimer_arch_sleep(100000/64);
+        get_simulation_time(&curTime);
     }
+
+    /* now the rest of the time is max. 199 ms */
 }
 
 /**
@@ -323,27 +347,29 @@ void handleMessage(PHY_msg * msg, pcap_timeval_s *targetTime)
     uint16_t usec;
     PHY_msg conf;
 
-    //print_debug("received!");
-	//print_msg(msg, "received");
+    /* get us to wait */
+    get_simulation_time(&now);
+    usec = clock_time_diff_usec(targetTime, &now)/64;
 
-	get_time_with_offset(&now);
-
-	/* init rtimer */
-    //rtimer_init();
-
-    usec = clock_time_diff_usec(targetTime, &now);
-    if (usec > 0) {
-        rtimer_arch_sleep(usec/64);
-    }
-
-    print_time(&now);
-    print_debug("usec: %i", usec);
+    /* wait (max. 199 ms) */
+    rtimer_arch_sleep(usec);
 
 	switch (msg->type) {
 	case PD_DATA_REQUEST:
 		conf.type = PD_DATA_CONFIRM;
 		conf.length = SIZEOF_PD_DATA_CONFIRM;
 		/* todo: disable CRC adding by the radio driver, no radio return value on ERROR specified! */
+		/*uint8_t i=0;
+		while (i<100) {
+            conf.x.data_conf.status = radioRetValueTXToPhyState(NETSTACK_RADIO.send((uint8_t *)&msg->x.data_req.data, msg->x.data_req.psduLength));
+            rtimer_arch_sleep(200000/64);
+            get_simulation_time(&now);
+            get_time(&clk);
+            print_time("simulation ", &now);
+            print_time("real clock ", &clk);
+            print_debug("----------------------------------");
+            i++;
+		}*/
 		conf.x.data_conf.status = radioRetValueTXToPhyState(NETSTACK_RADIO.send((uint8_t *)&msg->x.data_req.data, msg->x.data_req.psduLength));
 		send_msg(&conf);
 		break;
@@ -382,6 +408,10 @@ void handleMessage(PHY_msg * msg, pcap_timeval_s *targetTime)
 		print_debug("Message type %s unsupported!", msgTypeToString(msg->type));
 		break;
 	}
+
+    print_time("handle message at: simulation ", &now);
+    print_debug("add sleep (us/64): rtimer_arch_sleep(%u)",usec);
+
 }
 
 PROCESS_THREAD(transceiver_init, ev, data)
@@ -391,15 +421,16 @@ PROCESS_THREAD(transceiver_init, ev, data)
 	static pcapng_enhanced_packet_block_s packet;
 	static PHY_msg msg;
 	static uint8_t packetCounter = 0;
-    pcap_timeval_s time;
-    pcap_timeval_s time2;
-    pcap_timeval_s time3;
-    pcap_timeval_s time4;
-    rtimer_clock_t rt;
-    rtimer_clock_t rt2;
-    clock_time_t t;
-    clock_time_t t2;
-    pcap_timeval_s pcap_time;
+    pcap_timeval_s sim_time;
+    pcap_timeval_s event_time;
+
+//    pcap_timeval_s time2;
+//    pcap_timeval_s time3;
+//    pcap_timeval_s time4;
+//    rtimer_clock_t rt;
+//    rtimer_clock_t rt2;
+//    clock_time_t t;
+//    clock_time_t t2;
 
 	PROCESS_BEGIN();
 
@@ -407,60 +438,60 @@ PROCESS_THREAD(transceiver_init, ev, data)
 	initialize();
 
     /* print time */
-    get_rtime(&time);
-    rt = rtime;
-    rtimer_arch_sleep(1); // 10us
-    get_rtime(&time2);
-    rt2 = rtime;
-
-    print_time(&time);
-    print_rtime(&rt);
-    print_debug(" -- wait 64us -- ");
-    print_time(&time2);
-    print_rtime(&rt2);
-    print_debug(" ");
-
-    /* print time */
-    get_time(&time3);
-    t = sim_time;
-    rtimer_arch_sleep(200000/64); // 200ms
-    get_time(&time4);
-    t2 = sim_time;
-
-    print_time(&time3);
-    print_rtime(&t);
-    print_debug(" -- wait 200ms -- ");
-    print_time(&time4);
-    print_rtime(&t2);
-    print_debug(" ");
-
-/* print time */
-get_time(&time3);
-t = sim_time;
-rtimer_arch_sleep(100000/64); // 100ms
-get_time(&time4);
-t2 = sim_time;
-
-print_time(&time3);
-print_rtime(&t);
-print_debug(" -- wait 100ms -- ");
-print_time(&time4);
-print_rtime(&t2);
-print_debug(" ");
-
-/* print time */
-get_time(&time3);
-t = sim_time;
-rtimer_arch_sleep(50000/64); // 50ms
-get_time(&time4);
-t2 = sim_time;
-
-print_time(&time3);
-print_rtime(&t);
-print_debug(" -- wait 50ms -- ");
-print_time(&time4);
-print_rtime(&t2);
-print_debug(" ");
+//    get_rtime(&time);
+//    rt = rtime;
+//    rtimer_arch_sleep(1); // 10us
+//    get_rtime(&time2);
+//    rt2 = rtime;
+//
+//    print_time(&time);
+//    print_rtime(&rt);
+//    print_debug(" -- wait 64us -- ");
+//    print_time(&time2);
+//    print_rtime(&rt2);
+//    print_debug(" ");
+//
+//    /* print time */
+//    get_time(&time3);
+//    t = sim_time;
+//    rtimer_arch_sleep(200000/64); // 200ms
+//    get_time(&time4);
+//    t2 = sim_time;
+//
+//    print_time(&time3);
+//    print_rtime(&t);
+//    print_debug(" -- wait 200ms -- ");
+//    print_time(&time4);
+//    print_rtime(&t2);
+//    print_debug(" ");
+//
+///* print time */
+//get_time(&time3);
+//t = sim_time;
+//rtimer_arch_sleep(100000/64); // 100ms
+//get_time(&time4);
+//t2 = sim_time;
+//
+//print_time(&time3);
+//print_rtime(&t);
+//print_debug(" -- wait 100ms -- ");
+//print_time(&time4);
+//print_rtime(&t2);
+//print_debug(" ");
+//
+///* print time */
+//get_time(&time3);
+//t = sim_time;
+//rtimer_arch_sleep(50000/64); // 50ms
+//get_time(&time4);
+//t2 = sim_time;
+//
+//print_time(&time3);
+//print_rtime(&t);
+//print_debug(" -- wait 50ms -- ");
+//print_time(&time4);
+//print_rtime(&t2);
+//print_debug(" ");
 
 	/* wait for pcapng stream init */
 //	PROCESS_WAIT_EVENT_UNTIL(ev == pcapng_event_shb);
@@ -498,24 +529,24 @@ print_debug(" ");
 		/* deserialize encapsulated message */
 		deserialize_msg((uint8_t *)data + sizeof(pcapng_block_header_s) + sizeof(pcapng_enhanced_packet_block_s), &msg);
 
-		/* start simulation time */
-		if (packetCounter==1) {
-		    set_time_start_offset();
-		}
+		/* set event time */
+        set_event_time(&event_time, &packet);
 
-        /* set event time */
-        set_event_time(&pcap_time, &packet);
+        /* start simulation time */
+        if (packetCounter==1) {
+            start_simulation_time(&event_time);
+        }
 
-        /* wait until time arrives */
-        get_time_with_offset(&time);
+        /* get simulation time */
+        get_simulation_time(&sim_time);
 
-        if (clock_time_greater(&pcap_time, &time)) {
-            wait_until(&pcap_time);
-            //print_debug("handle message now!");
-            handleMessage(&msg, &pcap_time);
+        /* wait until event time */
+        if (clock_time_greater(&event_time, &sim_time)) {
+            wait_until(&event_time);
+            handleMessage(&msg, &event_time);
         } else {
-            print_debug("ERROR: event time is behind execution!.");
-            print_time(&time);
+            print_debug("ERROR: event time is behind simulation time!.");
+            print_time("simulation ", &sim_time);
         }
 
 
